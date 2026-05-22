@@ -16,7 +16,6 @@
   <link rel="apple-touch-icon" href="./icon-192.png" />
   <link rel="icon" type="image/png" href="./favicon.png" />
 
-  <!-- React + Babel + Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -47,7 +46,6 @@
     input[type=number]::-webkit-outer-spin-button,
     input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     input[type=number] { -moz-appearance: textfield; }
-    /* iOS safe area */
     .safe-top { padding-top: env(safe-area-inset-top); }
     .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
   </style>
@@ -72,17 +70,25 @@
       return [v, setV];
     };
 
-    // ─────────────── 기본 설정 ───────────────
-    const DEFAULT_PROFILE = { age: 35, sex: 'M', ht: 170, wt: 85, target: 70 };
+    // ─────────────── 프로필 (처음엔 비어있음) ───────────────
+    const EMPTY_PROFILE = { age: null, sex: null, ht: null, wt: null, target: null };
     const DEFAULT_SETTINGS = { workoutLevel: 'light', odPlan: 'dawn' };
 
+    const isProfileComplete = (p) =>
+      p && p.age != null && p.sex != null && p.ht != null && p.wt != null && p.target != null
+      && p.age > 0 && p.ht > 0 && p.wt > 0 && p.target > 0;
+
+    // Mifflin-St Jeor (정확한 공식)
     function computeMacros(p) {
-      const bmr = Math.round(10 * p.wt + 6.25 * p.ht - 5 * p.age - 5);
+      if (!isProfileComplete(p)) return null;
+      const sexAdj = p.sex === 'F' ? -161 : 5; // 남: +5, 여: -161
+      const bmr = Math.round(10 * p.wt + 6.25 * p.ht - 5 * p.age + sexAdj);
       const tdee = Math.round(bmr * 1.55);
-      const kcalTarget = Math.max(1500, tdee - 500);
+      const kcalTarget = Math.max(1200, tdee - 500);
       const proteinTarget = Math.round(p.wt * 2);
       const weeklyLoss = 0.5;
-      const weeksToGoal = Math.max(1, Math.ceil((p.wt - p.target) / weeklyLoss));
+      const diff = p.wt - p.target;
+      const weeksToGoal = diff > 0 ? Math.ceil(diff / weeklyLoss) : 0;
       return { bmr, tdee, kcalTarget, proteinTarget, weeklyLoss, weeksToGoal };
     }
 
@@ -698,7 +704,7 @@
       );
     }
 
-    function DetailView({ shift, settings, macros, checked, onToggleCheck, onBack }) {
+    function DetailView({ shift, settings, macros, checked, onToggleCheck, onBack, onEditProfile }) {
       const [dayIdx, setDayIdx] = useState(0);
       const [odPlan, setOdPlan] = useState(settings.odPlan);
 
@@ -706,8 +712,6 @@
       const day = days[dayIdx];
       const stats = calcStats(day);
       const meta = day.meta;
-      const kcalPct = (stats.kcal / macros.kcalTarget) * 100;
-      const pPct = (stats.p / macros.proteinTarget) * 100;
       const wo = WO[settings.workoutLevel][meta.woKey];
 
       useEffect(() => { window.scrollTo(0, 0); }, [dayIdx, odPlan]);
@@ -754,23 +758,49 @@
             </div>
           </div>
 
+          {/* 매크로 박스: 프로필 입력 여부에 따라 */}
           <div className="px-5 mb-5">
-            <div className="rounded-3xl p-5 bg-zinc-900/60 border border-zinc-800">
-              <div className="text-[11px] tracking-widest text-zinc-500 uppercase mb-4">오늘의 매크로 · 목표 대비</div>
-              <div className="flex justify-around items-center">
-                <div className="flex flex-col items-center gap-2">
-                  <ProgressRing pct={kcalPct} color="#f59e0b" label="KCAL" value={stats.kcal} />
-                  <div className="text-[10px] text-zinc-500 font-mono">/ {macros.kcalTarget}</div>
+            {macros ? (
+              <div className="rounded-3xl p-5 bg-zinc-900/60 border border-zinc-800">
+                <div className="text-[11px] tracking-widest text-zinc-500 uppercase mb-4">오늘의 매크로 · 목표 대비</div>
+                <div className="flex justify-around items-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <ProgressRing pct={(stats.kcal / macros.kcalTarget) * 100} color="#f59e0b" label="KCAL" value={stats.kcal} />
+                    <div className="text-[10px] text-zinc-500 font-mono">/ {macros.kcalTarget}</div>
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <ProgressRing pct={(stats.p / macros.proteinTarget) * 100} color="#22c55e" label="PROTEIN" value={`${stats.p}g`} />
+                    <div className="text-[10px] text-zinc-500 font-mono">/ {macros.proteinTarget}g</div>
+                  </div>
                 </div>
-                <div className="flex flex-col items-center gap-2">
-                  <ProgressRing pct={pPct} color="#22c55e" label="PROTEIN" value={`${stats.p}g`} />
-                  <div className="text-[10px] text-zinc-500 font-mono">/ {macros.proteinTarget}g</div>
+                {macros.weeksToGoal > 0 && (
+                  <div className="mt-4 pt-4 border-t border-zinc-800 flex justify-center text-[11px]">
+                    <div className="text-amber-400 font-mono">감량 페이스 -{macros.weeklyLoss}kg/주</div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button onClick={onEditProfile}
+                className="w-full rounded-3xl p-5 bg-zinc-900/60 border border-zinc-800 border-dashed text-center active:scale-[0.99] transition">
+                <div className="text-zinc-300 text-sm font-semibold mb-1">📊 칼로리 / 단백질 진행률 보기</div>
+                <div className="text-zinc-500 text-[12px] mb-3 leading-snug">
+                  프로필 입력하면 목표 대비 자동 계산돼요
                 </div>
+                <div className="inline-block px-4 py-2 rounded-xl bg-amber-500 text-zinc-950 text-[12px] font-bold">
+                  프로필 입력하기 →
+                </div>
+              </button>
+            )}
+
+            {/* 식단 합계는 프로필 무관하게 항상 표시 */}
+            {!macros && (
+              <div className="mt-3 rounded-2xl p-3 bg-zinc-900/40 border border-zinc-800/60 text-center">
+                <span className="text-[11px] text-zinc-500">오늘 식단 합계 · </span>
+                <span className="text-amber-400 font-mono text-[12px] font-semibold">{stats.kcal}kcal</span>
+                <span className="text-zinc-600 mx-1">·</span>
+                <span className="text-emerald-400 font-mono text-[12px] font-semibold">P {stats.p}g</span>
               </div>
-              <div className="mt-4 pt-4 border-t border-zinc-800 flex justify-center text-[11px]">
-                <div className="text-amber-400 font-mono">감량 페이스 -{macros.weeklyLoss}kg/주</div>
-              </div>
-            </div>
+            )}
           </div>
 
           <div className="px-5 mb-5 space-y-2.5">
@@ -820,15 +850,36 @@
       );
     }
 
+    function NumberField({ value, onChange, unit, min, max, placeholder }) {
+      return (
+        <div className="flex items-baseline gap-1">
+          <input
+            type="number"
+            inputMode="numeric"
+            min={min} max={max}
+            value={value ?? ''}
+            placeholder={placeholder}
+            onChange={e => {
+              const v = e.target.value;
+              onChange(v === '' ? null : Number(v));
+            }}
+            className="w-full bg-transparent text-zinc-100 font-mono font-bold text-xl focus:outline-none placeholder:text-zinc-700"
+          />
+          <span className="text-xs text-zinc-500 font-mono">{unit}</span>
+        </div>
+      );
+    }
+
     function ProfileEditor({ profile, settings, onSave, onClose }) {
       const [p, setP] = useState(profile);
       const [s, setS] = useState(settings);
       const macros = computeMacros(p);
+      const complete = isProfileComplete(p);
 
       return (
         <div className="fixed inset-0 bg-black/70 backdrop-blur z-50 flex items-end sm:items-center justify-center fade-in">
-          <div className="bg-zinc-950 border-t sm:border border-zinc-800 sm:rounded-3xl rounded-t-3xl w-full max-w-md max-h-[90vh] overflow-y-auto modal-in safe-bottom">
-            <div className="sticky top-0 bg-zinc-950 px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
+          <div className="bg-zinc-950 border-t sm:border border-zinc-800 sm:rounded-3xl rounded-t-3xl w-full max-w-md max-h-[92vh] overflow-y-auto modal-in safe-bottom">
+            <div className="sticky top-0 bg-zinc-950 px-5 py-4 border-b border-zinc-800 flex items-center justify-between z-10">
               <div>
                 <div className="font-display text-[10px] tracking-[0.3em] text-amber-400">SETTINGS</div>
                 <div className="text-zinc-100 font-bold">프로필 · 옵션</div>
@@ -837,53 +888,94 @@
             </div>
 
             <div className="p-5 space-y-5">
+              {/* 성별 */}
               <div>
-                <div className="text-[10px] tracking-widest text-zinc-500 uppercase mb-2">기본 정보</div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="text-[10px] tracking-widest text-zinc-500 uppercase mb-2">성별</div>
+                <div className="flex gap-2">
                   {[
-                    { k: 'age', label: '나이', unit: '세', min: 18, max: 80 },
-                    { k: 'ht',  label: '키',   unit: 'cm', min: 140, max: 220 },
-                    { k: 'wt',  label: '현재 체중', unit: 'kg', min: 40, max: 200 },
-                    { k: 'target', label: '목표 체중', unit: 'kg', min: 40, max: 200 },
-                  ].map(f => (
-                    <label key={f.k} className="rounded-2xl bg-zinc-900 border border-zinc-800 p-3">
-                      <div className="text-[10px] text-zinc-500 tracking-wide uppercase mb-1">{f.label}</div>
-                      <div className="flex items-baseline gap-1">
-                        <input type="number" min={f.min} max={f.max} value={p[f.k]}
-                          onChange={e => setP({ ...p, [f.k]: Number(e.target.value) || 0 })}
-                          className="w-full bg-transparent text-zinc-100 font-mono font-bold text-xl focus:outline-none" />
-                        <span className="text-xs text-zinc-500 font-mono">{f.unit}</span>
-                      </div>
-                    </label>
+                    { v: 'M', label: '남성', emoji: '♂' },
+                    { v: 'F', label: '여성', emoji: '♀' },
+                  ].map(o => (
+                    <button key={o.v} onClick={() => setP({ ...p, sex: o.v })}
+                      className={`flex-1 p-3 rounded-2xl border transition flex items-center justify-center gap-2 ${
+                        p.sex === o.v
+                          ? (o.v === 'M' ? 'bg-indigo-500/15 border-indigo-500/50 text-indigo-300' : 'bg-pink-500/15 border-pink-500/50 text-pink-300')
+                          : 'bg-zinc-900 border-zinc-800 text-zinc-500'
+                      }`}>
+                      <span className="text-lg">{o.emoji}</span>
+                      <span className="font-bold text-sm">{o.label}</span>
+                    </button>
                   ))}
                 </div>
               </div>
 
+              {/* 기본 정보 */}
               <div>
-                <div className="text-[10px] tracking-widest text-zinc-500 uppercase mb-2">자동 계산</div>
+                <div className="text-[10px] tracking-widest text-zinc-500 uppercase mb-2">기본 정보</div>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-2xl bg-zinc-900 border border-zinc-800 p-3">
-                    <div className="text-[10px] text-zinc-500 tracking-wide uppercase">BMR · TDEE</div>
-                    <div className="font-mono text-sm text-zinc-200 mt-1">{macros.bmr} / {macros.tdee}</div>
-                  </div>
-                  <div className="rounded-2xl bg-amber-500/10 border border-amber-500/30 p-3">
-                    <div className="text-[10px] text-amber-400 tracking-wide uppercase">목표 kcal</div>
-                    <div className="font-mono text-sm text-amber-300 font-bold mt-1">{macros.kcalTarget}</div>
-                  </div>
-                  <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/30 p-3">
-                    <div className="text-[10px] text-emerald-400 tracking-wide uppercase">단백질</div>
-                    <div className="font-mono text-sm text-emerald-300 font-bold mt-1">{macros.proteinTarget}g</div>
-                  </div>
-                  <div className="rounded-2xl bg-zinc-900 border border-zinc-800 p-3">
-                    <div className="text-[10px] text-zinc-500 tracking-wide uppercase">예상 기간</div>
-                    <div className="font-mono text-sm text-zinc-200 mt-1">~{macros.weeksToGoal}주</div>
-                  </div>
+                  {[
+                    { k: 'age', label: '나이', unit: '세', min: 18, max: 80, ph: '나이' },
+                    { k: 'ht',  label: '키',   unit: 'cm', min: 140, max: 220, ph: '키' },
+                    { k: 'wt',  label: '현재 체중', unit: 'kg', min: 40, max: 200, ph: '체중' },
+                    { k: 'target', label: '목표 체중', unit: 'kg', min: 40, max: 200, ph: '목표' },
+                  ].map(f => (
+                    <label key={f.k} className="rounded-2xl bg-zinc-900 border border-zinc-800 p-3 block">
+                      <div className="text-[10px] text-zinc-500 tracking-wide uppercase mb-1">{f.label}</div>
+                      <NumberField
+                        value={p[f.k]}
+                        onChange={(v) => setP({ ...p, [f.k]: v })}
+                        unit={f.unit}
+                        min={f.min}
+                        max={f.max}
+                        placeholder={f.ph}
+                      />
+                    </label>
+                  ))}
                 </div>
-                <div className="text-[10px] text-zinc-600 mt-2 leading-relaxed">
-                  · Mifflin-St Jeor (남) · TDEE × 1.55 (교대+헬스) · −500kcal deficit
+                <div className="text-[10.5px] text-zinc-600 mt-2 leading-relaxed">
+                  모든 정보는 이 폰에만 저장돼요 (외부 전송 X · 클라우드 X)
                 </div>
               </div>
 
+              {/* 자동 계산 결과 */}
+              <div>
+                <div className="text-[10px] tracking-widest text-zinc-500 uppercase mb-2">
+                  자동 계산 {complete ? '' : '· 모든 정보 입력 후 표시'}
+                </div>
+                {macros ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-2xl bg-zinc-900 border border-zinc-800 p-3">
+                        <div className="text-[10px] text-zinc-500 tracking-wide uppercase">BMR · TDEE</div>
+                        <div className="font-mono text-sm text-zinc-200 mt-1">{macros.bmr} / {macros.tdee}</div>
+                      </div>
+                      <div className="rounded-2xl bg-amber-500/10 border border-amber-500/30 p-3">
+                        <div className="text-[10px] text-amber-400 tracking-wide uppercase">목표 kcal</div>
+                        <div className="font-mono text-sm text-amber-300 font-bold mt-1">{macros.kcalTarget}</div>
+                      </div>
+                      <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/30 p-3">
+                        <div className="text-[10px] text-emerald-400 tracking-wide uppercase">단백질</div>
+                        <div className="font-mono text-sm text-emerald-300 font-bold mt-1">{macros.proteinTarget}g</div>
+                      </div>
+                      <div className="rounded-2xl bg-zinc-900 border border-zinc-800 p-3">
+                        <div className="text-[10px] text-zinc-500 tracking-wide uppercase">예상 기간</div>
+                        <div className="font-mono text-sm text-zinc-200 mt-1">
+                          {macros.weeksToGoal > 0 ? `~${macros.weeksToGoal}주` : '목표 도달'}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-zinc-600 mt-2 leading-relaxed">
+                      · Mifflin-St Jeor ({p.sex === 'F' ? '여' : '남'}) · TDEE × 1.55 · −500kcal deficit
+                    </div>
+                  </>
+                ) : (
+                  <div className="rounded-2xl p-4 bg-zinc-900/40 border border-zinc-800 border-dashed text-center text-[12px] text-zinc-500">
+                    위 정보를 모두 입력하면 자동 계산돼요
+                  </div>
+                )}
+              </div>
+
+              {/* 운동 강도 */}
               <div>
                 <div className="text-[10px] tracking-widest text-zinc-500 uppercase mb-2">운동 강도</div>
                 <div className="flex gap-2">
@@ -904,6 +996,7 @@
                 </div>
               </div>
 
+              {/* OD 운전 방식 */}
               <div>
                 <div className="text-[10px] tracking-widest text-zinc-500 uppercase mb-2">OD 패턴 기본 운전 방식</div>
                 <div className="flex gap-2">
@@ -958,7 +1051,8 @@
       );
     }
 
-    function GridView({ onSelect, onEditProfile }) {
+    function GridView({ profile, onSelect, onEditProfile }) {
+      const complete = isProfileComplete(profile);
       return (
         <div className="min-h-screen bg-zinc-950 safe-bottom">
           <div className="px-5 pt-12 pb-5 safe-top flex justify-between items-start">
@@ -968,16 +1062,39 @@
               <p className="text-zinc-500 text-[13px]">패턴을 골라 타임라인 · 식단 · 수면</p>
             </div>
             <button onClick={onEditProfile}
-              className="w-11 h-11 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center active:scale-95 transition mt-1"
+              className={`w-11 h-11 rounded-full border flex items-center justify-center active:scale-95 transition mt-1 relative ${
+                complete ? 'bg-zinc-900 border-zinc-800' : 'bg-amber-500/15 border-amber-500/40'
+              }`}
               aria-label="설정">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke={complete ? '#a1a1aa' : '#fbbf24'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="3" />
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
               </svg>
+              {!complete && (
+                <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-amber-500 rounded-full border-2 border-zinc-950" />
+              )}
             </button>
           </div>
 
-          <div className="px-5 grid grid-cols-2 gap-3 pb-10 pt-3">
+          {/* 프로필 미입력 시에만 안내 카드 */}
+          {!complete && (
+            <div className="px-5 mb-3">
+              <button onClick={onEditProfile}
+                className="w-full rounded-2xl p-4 bg-amber-500/10 border border-amber-500/30 text-left active:scale-[0.99] transition flex items-center gap-3">
+                <div className="text-2xl">👋</div>
+                <div className="flex-1">
+                  <div className="text-amber-300 font-bold text-sm">프로필 입력하기</div>
+                  <div className="text-amber-300/70 text-[11px] leading-snug mt-0.5">
+                    칼로리·단백질 목표가 자동 계산돼요
+                  </div>
+                </div>
+                <div className="text-amber-300 text-lg">→</div>
+              </button>
+            </div>
+          )}
+
+          <div className="px-5 grid grid-cols-2 gap-3 pb-10 pt-2">
             {SHIFTS.map((s, i) => (
               <div key={s.id} className="slide-up" style={{ animationDelay: `${i * 40}ms` }}>
                 <ShiftCard shift={s} onClick={() => onSelect(s)} />
@@ -1021,7 +1138,7 @@
     }
 
     function App() {
-      const [profile, setProfile] = usePersistedState('profile', DEFAULT_PROFILE);
+      const [profile, setProfile] = usePersistedState('profile', EMPTY_PROFILE);
       const [settings, setSettings] = usePersistedState('settings', DEFAULT_SETTINGS);
       const [checkedArr, setCheckedArr] = usePersistedState('checked', []);
       const [selected, setSelected] = useState(null);
@@ -1034,6 +1151,8 @@
         setCheckedArr(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
       };
 
+      const openEditor = () => setEditing(true);
+
       return (
         <>
           {selected ? (
@@ -1044,11 +1163,13 @@
               checked={checked}
               onToggleCheck={toggleCheck}
               onBack={() => setSelected(null)}
+              onEditProfile={openEditor}
             />
           ) : (
             <GridView
+              profile={profile}
               onSelect={setSelected}
-              onEditProfile={() => setEditing(true)}
+              onEditProfile={openEditor}
             />
           )}
           {editing && (
