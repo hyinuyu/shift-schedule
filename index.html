@@ -115,7 +115,7 @@
       '곤약젤리':            { kcal: 10,  p: 0,  cat: 'cvs' },
     };
 
-    const VIT_AM = '비타민 D3 + 오메가3 + B복합 + 종합 + 크레아틴 5g';
+    const VIT_AM = '비타민 D3 + 오메가3 + 크레아틴 5g';
     const VIT_PM = '마그네슘 글리시네이트 300mg';
 
     const WO = {
@@ -138,12 +138,14 @@
     };
 
     const VITAMINS = [
-      { name: '비타민 D3', dose: '2,000-4,000 IU', when: '아침', why: '나이트 근무자 햇빛 부족 보충' },
-      { name: '오메가 3', dose: 'EPA+DHA 1,000-2,000mg', when: '아침', why: '항염 · 심혈관 · 지용성' },
-      { name: '비타민 B 복합', dose: '1정', when: '아침', why: '교대근무 피로 · 에너지 대사' },
-      { name: '종합비타민', dose: '1정', when: '아침', why: '미량영양소 안전망' },
-      { name: '크레아틴 모노', dose: '5g 매일', when: '아침 (시간 무관)', why: '근육량/근력 + 인지' },
-      { name: '마그네슘 글리시네이트', dose: '300mg', when: '취침 30분 전', why: '수면 질 + 근육 회복' },
+      // 핵심 4종
+      { name: '비타민 D3', dose: '2,000-4,000 IU', when: '아침 (지용성)', why: '나이트 근무자 햇빛 부족 + 한국인 결핍률 80%+', tier: 'core' },
+      { name: '오메가 3', dose: 'EPA+DHA 1,000-2,000mg', when: '아침 (지용성)', why: '항염 · 심혈관 · 등푸른 생선 매일 안 먹으면 필수', tier: 'core' },
+      { name: '크레아틴 모노하이드레이트', dose: '5g 매일', when: '아침 (시간 무관)', why: '근력/근육량/인지 기능 · 운동인 standard', tier: 'core' },
+      { name: '마그네슘 글리시네이트', dose: '300mg', when: '취침 30분 전', why: '교대근무자 수면 질 + 근육 회복 + 변비 방지', tier: 'core' },
+      // 선택 (식단 부족 시)
+      { name: '비타민 B 복합', dose: '1정', when: '아침', why: '만성 피로 심하거나 식단이 단조로울 때만 추가', tier: 'optional' },
+      { name: '종합비타민', dose: '1정', when: '아침', why: '안전망 · 핵심 4종 챙기면 생략 가능', tier: 'optional' },
     ];
 
 
@@ -1103,14 +1105,18 @@
     }
 
     function VitaminSection() {
+      const core = VITAMINS.filter(v => v.tier === 'core');
+      const optional = VITAMINS.filter(v => v.tier === 'optional');
       return (
         <div className="mt-8 rounded-2xl p-4 border border-pink-500/30 bg-pink-500/5">
-          <div className="font-display text-[10px] tracking-[0.3em] text-pink-400 mb-1">SUPPLEMENTS · 영양제</div>
+          <div className="font-display text-[10px] tracking-[0.3em] text-pink-400 mb-1">SUPPLEMENTS · 큐레이션</div>
           <div className="text-[11px] text-zinc-400 mb-3 leading-snug">
-            아침 첫 식사 후 한 번 + 자기 전 한 번 · 모든 패턴 동일
+            나이트 근무 + 운동인 기준 · 진짜 필요한 것만
           </div>
-          <div className="space-y-2.5">
-            {VITAMINS.map(v => (
+
+          <div className="text-[10px] tracking-widest text-pink-300 uppercase mb-2 font-bold">핵심 4종</div>
+          <div className="space-y-2 mb-4">
+            {core.map(v => (
               <div key={v.name} className="rounded-xl p-3 bg-zinc-900/60 border border-zinc-800">
                 <div className="flex items-baseline justify-between gap-2 mb-1">
                   <div className="text-zinc-100 font-semibold text-[13px]">{v.name}</div>
@@ -1122,8 +1128,24 @@
               </div>
             ))}
           </div>
+
+          <div className="text-[10px] tracking-widest text-zinc-500 uppercase mb-2 font-bold">선택 · 식단 부족 시</div>
+          <div className="space-y-2">
+            {optional.map(v => (
+              <div key={v.name} className="rounded-xl p-3 bg-zinc-900/40 border border-zinc-800/60 opacity-75">
+                <div className="flex items-baseline justify-between gap-2 mb-1">
+                  <div className="text-zinc-300 font-medium text-[12.5px]">{v.name}</div>
+                  <div className="font-mono text-[11px] text-zinc-500">{v.dose}</div>
+                </div>
+                <div className="text-[10.5px] text-zinc-500 leading-snug">
+                  <span className="text-zinc-400">⏰ {v.when}</span> · {v.why}
+                </div>
+              </div>
+            ))}
+          </div>
+
           <div className="mt-3 text-[10.5px] text-zinc-500 leading-relaxed italic">
-            ※ 응급의학과 의사이시니 멜라토닌 0.3-3mg (취침 30분 전) 단기 사용도 옵션. 본인 판단.
+            ※ 응급의학과 의사 본인 판단 우선 · 멜라토닌 0.3-3mg (취침 30분 전) 단기 옵션
           </div>
         </div>
       );
