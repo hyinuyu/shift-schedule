@@ -100,18 +100,14 @@
       '프로틴 음료':         { kcal: 150, p: 25, cat: 'cvs' },
       '닭가슴살 소시지 2개': { kcal: 160, p: 26, cat: 'cvs' },
       '닭가슴살 라이스볼':   { kcal: 220, p: 18, cat: 'cvs' },
-      // 편의점 - 일반
+      // 편의점 - 마시기/까서 먹기 편한 것
       '단백질바':            { kcal: 200, p: 18, cat: 'cvs' },
       '그릭요거트':          { kcal: 100, p: 10, cat: 'cvs' },
       '삶은계란 2개':        { kcal: 140, p: 12, cat: 'cvs' },
-      '미니 두부':           { kcal: 80,  p: 8,  cat: 'cvs' },
-      '어묵바':              { kcal: 50,  p: 8,  cat: 'cvs' },
       '두유 무가당':         { kcal: 100, p: 9,  cat: 'cvs' },
       '우유 저지방 200ml':   { kcal: 90,  p: 7,  cat: 'cvs' },
-      // 편의점 - 탄수/지방
+      // 편의점 - 가벼운 간식
       '바나나':              { kcal: 90,  p: 1,  cat: 'cvs' },
-      '고구마':              { kcal: 130, p: 2,  cat: 'cvs' },
-      '견과류 한줌':         { kcal: 180, p: 5,  cat: 'cvs' },
       '곤약젤리':            { kcal: 10,  p: 0,  cat: 'cvs' },
     };
 
@@ -242,7 +238,7 @@
               { t: '16:30', act: 'wake',    text: '기상 + 샤워 + 정신차리기' },
               { t: '17:00', act: 'meal',    text: '식사 + 도시락 챙김', food: '닭가슴살 스테이크' },
               { t: '17:00', act: 'snack',   text: '+', food: '그릭요거트' },
-              { t: '17:00', act: 'snack',   text: '+', food: '고구마' },
+              { t: '17:00', act: 'snack',   text: '+', food: '두유 무가당' },
               { t: '17:45', act: 'travel',  text: '출근' },
               { t: '18:00', act: 'workN',   text: '나이트 시작' },
               { t: '18:30', act: 'coffee',  text: '근무 초반 커피 (~150mg)' },
@@ -275,7 +271,7 @@
               { t: '16:30', act: 'wake',    text: '기상 + 샤워' },
               { t: '17:00', act: 'meal',    text: '식사 + 도시락 챙김', food: '닭가슴살 스테이크' },
               { t: '17:00', act: 'snack',   text: '+', food: '그릭요거트' },
-              { t: '17:00', act: 'snack',   text: '+', food: '고구마' },
+              { t: '17:00', act: 'snack',   text: '+', food: '두유 무가당' },
               { t: '17:45', act: 'travel',  text: '출근' },
               { t: '18:00', act: 'workN',   text: '나이트 시작' },
               { t: '18:30', act: 'coffee',  text: '커피 (~150mg)' },
@@ -600,7 +596,7 @@
               { t: '16:30', act: 'wake',    text: '기상 + 샤워' },
               { t: '17:00', act: 'meal',    text: '식사 + 도시락 챙김', food: '닭가슴살 스테이크' },
               { t: '17:00', act: 'snack',   text: '+', food: '그릭요거트' },
-              { t: '17:00', act: 'snack',   text: '+', food: '고구마' },
+              { t: '17:00', act: 'snack',   text: '+', food: '두유 무가당' },
               { t: '17:45', act: 'travel',  text: '출근 (걸어서)' },
               { t: '18:00', act: 'workN',   text: '나이트 시작' },
               { t: '18:30', act: 'coffee',  text: '근무 초반 커피 (~150mg)' },
@@ -1245,30 +1241,27 @@
               </div>
             </div>
             <div className="font-display text-[11px] tracking-[0.25em] text-zinc-400 mt-6 mb-2">편의점 · 골라 먹는 옵션</div>
-            <div className="text-[11px] text-zinc-500 mb-3 leading-snug">야식/간식 시 다양하게 골라 드세요 · ⭐ = 단백질 효율 좋음</div>
+            <div className="text-[11px] text-zinc-500 mb-3 leading-snug">까서 먹거나 마시기만 하면 됨 · ⭐ = 단백질 효율 좋음</div>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { name: '닭가슴살 (편의점)', kcal: 100, p: 22, star: true },
-                { name: '닭가슴살 소시지 2개', kcal: 160, p: 26, star: true },
-                { name: '프로틴 음료', kcal: 150, p: 25, star: true },
-                { name: '단백질 우유', kcal: 200, p: 20, star: true },
-                { name: '닭가슴살 라이스볼', kcal: 220, p: 18 },
-                { name: '단백질바', kcal: 200, p: 18 },
-                { name: '삶은계란 2개', kcal: 140, p: 12 },
-                { name: '그릭요거트', kcal: 100, p: 10 },
-                { name: '두유 무가당', kcal: 100, p: 9 },
-                { name: '미니 두부', kcal: 80, p: 8 },
-                { name: '어묵바', kcal: 50, p: 8 },
-                { name: '우유 저지방', kcal: 90, p: 7 },
-                { name: '바나나', kcal: 90, p: 1 },
-                { name: '고구마', kcal: 130, p: 2 },
-                { name: '견과류 한줌', kcal: 180, p: 5 },
-                { name: '곤약젤리', kcal: 10, p: 0 },
+                { name: '프로틴 음료', kcal: 150, p: 25, star: true, tip: '마시기만' },
+                { name: '단백질 우유', kcal: 200, p: 20, star: true, tip: '셀렉스 등' },
+                { name: '닭가슴살 소시지', kcal: 160, p: 26, star: true, tip: '까서 바로' },
+                { name: '닭가슴살 편의점', kcal: 100, p: 22, star: true, tip: '슬라이스/큐브' },
+                { name: '닭가슴살 라이스볼', kcal: 220, p: 18, tip: '한끼 대용' },
+                { name: '단백질바', kcal: 200, p: 18, tip: '까서 바로' },
+                { name: '삶은계란 2개', kcal: 140, p: 12, tip: '까서 바로' },
+                { name: '그릭요거트', kcal: 100, p: 10, tip: '숟가락' },
+                { name: '두유 무가당', kcal: 100, p: 9, tip: '마시기만' },
+                { name: '우유 저지방', kcal: 90, p: 7, tip: '마시기만' },
+                { name: '바나나', kcal: 90, p: 1, tip: '까서 바로' },
+                { name: '곤약젤리', kcal: 10, p: 0, tip: '마시기만' },
               ].map(item => (
                 <div key={item.name} className="rounded-xl p-2.5 bg-zinc-900/60 border border-zinc-800">
-                  <div className="text-zinc-200 text-[11.5px] font-medium leading-tight mb-1.5">
+                  <div className="text-zinc-200 text-[11.5px] font-medium leading-tight mb-1">
                     {item.name} {item.star && <span className="text-amber-400">⭐</span>}
                   </div>
+                  <div className="text-[9.5px] text-zinc-500 mb-1.5">{item.tip}</div>
                   <div className="flex gap-2 font-mono text-[10.5px]">
                     <span className="text-amber-400">{item.kcal}kcal</span>
                     <span className="text-emerald-400">P {item.p}g</span>
