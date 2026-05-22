@@ -115,7 +115,7 @@
       '곤약젤리':            { kcal: 10,  p: 0,  cat: 'cvs' },
     };
 
-    const VIT_AM = '비타민 D3 + 오메가3 + 크레아틴 5g';
+    const VIT_AM = '비타민 D3 + 오메가3 + 종합비타민';
     const VIT_PM = '마그네슘 글리시네이트 300mg';
 
     const WO = {
@@ -141,11 +141,11 @@
       // 핵심 4종
       { name: '비타민 D3', dose: '2,000-4,000 IU', when: '아침 (지용성)', why: '나이트 근무자 햇빛 부족 + 한국인 결핍률 80%+', tier: 'core' },
       { name: '오메가 3', dose: 'EPA+DHA 1,000-2,000mg', when: '아침 (지용성)', why: '항염 · 심혈관 · 등푸른 생선 매일 안 먹으면 필수', tier: 'core' },
-      { name: '크레아틴 모노하이드레이트', dose: '5g 매일', when: '아침 (시간 무관)', why: '근력/근육량/인지 기능 · 운동인 standard', tier: 'core' },
+      { name: '종합비타민', dose: '1정', when: '아침', why: '안전망 · 미량영양소 결핍 방지 · 식단 단조로움 보완', tier: 'core' },
       { name: '마그네슘 글리시네이트', dose: '300mg', when: '취침 30분 전', why: '교대근무자 수면 질 + 근육 회복 + 변비 방지', tier: 'core' },
-      // 선택 (식단 부족 시)
-      { name: '비타민 B 복합', dose: '1정', when: '아침', why: '만성 피로 심하거나 식단이 단조로울 때만 추가', tier: 'optional' },
-      { name: '종합비타민', dose: '1정', when: '아침', why: '안전망 · 핵심 4종 챙기면 생략 가능', tier: 'optional' },
+      // 선택 (강도 운동 또는 만성 피로 시)
+      { name: '크레아틴 모노하이드레이트', dose: '5g 매일', when: '아침 (시간 무관)', why: '강도 높은 운동 시 추가 · 근력/근육량/인지', tier: 'optional' },
+      { name: '비타민 B 복합', dose: '1정', when: '아침', why: '만성 피로 심하거나 식단 단조로울 때만', tier: 'optional' },
     ];
 
 
@@ -209,7 +209,7 @@
         days: [
           {
             title: 'Day 1 · 데이', loc: '구미',
-            meta: { sleep: { from: '22:30', to: '07:00', hrs: 8.5, note: '평소대로 (일찍 자기 무리)' }, caffeine: { cutoff: '14:00', note: '~300mg · 마지막 약간 일찍' }, woKey: 'rest', workoutTime: null },
+            meta: { sleep: { from: '22:30', to: '07:00', hrs: 8.5, note: '평소대로 (일찍 자기 무리)' }, caffeine: { cutoff: '14:00', note: '~300mg · 마지막 약간 일찍' }, woKey: 'pull', workoutTime: '19:30' },
             items: [
               { t: '07:00', act: 'wake',    text: '기상' },
               { t: '07:20', act: 'meal',    text: '아침 (집, 가볍게)', food: '닭가슴살 스테이크' },
@@ -221,9 +221,9 @@
               { t: '14:00', act: 'coffee',  text: '마지막 커피 (~150mg)', note: '내일 오전 늦잠 위해 조금 일찍 컷' },
               { t: '18:00', act: 'workD',   text: '퇴근' },
               { t: '18:30', act: 'meal',    text: '저녁 (집)', food: '닭가슴살 볶음밥' },
-              { t: '19:30', act: 'rest',    text: '가벼운 스트레칭', note: '내일 나이트 대비 · 운동 X' },
-              { t: '21:00', act: 'snack',   text: '가벼운 야식', food: '닭가슴살 스테이크' },
-              { t: '21:00', act: 'snack',   text: '+', food: '그릭요거트' },
+              { t: '19:30', act: 'workout', text: '헬스 · Pull (90min)' },
+              { t: '21:00', act: 'meal',    text: '운동 후', food: '닭가슴살 스테이크' },
+              { t: '21:00', act: 'snack',   text: '+', food: '프로틴 음료' },
               { t: '22:00', act: 'vit',     text: VIT_PM },
               { t: '22:30', act: 'sleep',   text: '평소대로 취침' },
             ],
