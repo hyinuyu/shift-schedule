@@ -1,4 +1,4 @@
-const CACHE = 'shift-schedule-v1';
+const CACHE = 'shift-schedule-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -24,32 +24,51 @@ self.addEventListener('activate', (e) => {
   );
 });
 
+// 페이지에서 'clearCache' 메시지 받으면 캐시 전부 비우기
+self.addEventListener('message', (e) => {
+  if (e.data === 'clearCache') {
+    caches.keys().then((keys) =>
+      Promise.all(keys.map((k) => caches.delete(k)))
+    );
+  } else if (e.data === 'skipWaiting') {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
-  // 외부 CDN (React, Tailwind, 폰트) 는 그냥 fetch
-  if (url.origin !== location.origin) {
+  const isNavigate = e.request.mode === 'navigate';
+  const isHTML = url.pathname.endsWith('/') || url.pathname.endsWith('.html');
+
+  // HTML/navigate 요청: network-first (최신 코드 받아오기)
+  if (isNavigate || isHTML) {
     e.respondWith(
-      caches.match(e.request).then(
-        (r) => r || fetch(e.request).then((res) => {
+      fetch(e.request)
+        .then((res) => {
           if (res.ok) {
             const copy = res.clone();
             caches.open(CACHE).then((c) => c.put(e.request, copy));
           }
           return res;
-        }).catch(() => caches.match(e.request))
-      )
+        })
+        .catch(() =>
+          caches.match(e.request).then((r) => r || caches.match('./'))
+        )
     );
     return;
   }
-  // 같은 origin: cache-first, fallback to network
+
+  // 정적 자원: cache-first, fallback to network
   e.respondWith(
     caches.match(e.request).then((r) =>
       r || fetch(e.request).then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(e.request, copy));
+        if (res.ok && (url.origin === location.origin || res.type === 'cors' || res.type === 'basic')) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(e.request, copy));
+        }
         return res;
-      }).catch(() => caches.match('./'))
+      }).catch(() => caches.match(e.request))
     )
   );
 });
