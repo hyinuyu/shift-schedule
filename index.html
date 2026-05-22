@@ -4,32 +4,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>근무 스케줄</title>
-  <meta name="description" content="교대근무 식단·수면·운동 스케줄러" />
   <meta name="theme-color" content="#09090b" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="근무" />
-  <meta name="format-detection" content="telephone=no" />
-
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./icon-192.png" />
   <link rel="icon" type="image/png" href="./favicon.png" />
-
   <script src="https://cdn.tailwindcss.com"></script>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
   <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.css');
     @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;600;700&display=swap');
-
-    * {
-      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
-      -webkit-tap-highlight-color: transparent;
-      box-sizing: border-box;
-    }
+    * { font-family: 'Pretendard', -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
     html, body { background: #09090b; min-height: 100vh; min-height: 100dvh; overscroll-behavior-x: none; }
     body { margin: 0; }
     .font-display { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; }
@@ -54,36 +43,28 @@
 </head>
 <body>
   <div id="root"></div>
-
   <script type="text/babel" data-presets="react">
     const { useState, useEffect, useMemo, useRef } = React;
 
-    // ─────────────── localStorage 훅 ───────────────
     const usePersistedState = (key, initial) => {
       const [v, setV] = useState(() => {
-        try {
-          const s = localStorage.getItem(key);
-          return s !== null ? JSON.parse(s) : initial;
-        } catch { return initial; }
+        try { const s = localStorage.getItem(key); return s !== null ? JSON.parse(s) : initial; }
+        catch { return initial; }
       });
-      useEffect(() => {
-        try { localStorage.setItem(key, JSON.stringify(v)); } catch {}
-      }, [key, v]);
+      useEffect(() => { try { localStorage.setItem(key, JSON.stringify(v)); } catch {} }, [key, v]);
       return [v, setV];
     };
 
-    // ─────────────── 프로필 (처음엔 비어있음) ───────────────
     const EMPTY_PROFILE = { age: null, sex: null, ht: null, wt: null, target: null };
-    const DEFAULT_SETTINGS = { workoutLevel: 'light', odPlan: 'dawn' };
+    const DEFAULT_SETTINGS = { workoutLevel: 'standard', odPlan: 'dawn' };
 
     const isProfileComplete = (p) =>
       p && p.age != null && p.sex != null && p.ht != null && p.wt != null && p.target != null
       && p.age > 0 && p.ht > 0 && p.wt > 0 && p.target > 0;
 
-    // Mifflin-St Jeor (정확한 공식)
     function computeMacros(p) {
       if (!isProfileComplete(p)) return null;
-      const sexAdj = p.sex === 'F' ? -161 : 5; // 남: +5, 여: -161
+      const sexAdj = p.sex === 'F' ? -161 : 5;
       const bmr = Math.round(10 * p.wt + 6.25 * p.ht - 5 * p.age + sexAdj);
       const tdee = Math.round(bmr * 1.55);
       const kcalTarget = Math.max(1200, tdee - 500);
@@ -105,55 +86,55 @@
       workout: { c: '#22c55e', bg: 'rgba(34,197,94,0.12)',   ic: '💪', lbl: '운동' },
       travel:  { c: '#06b6d4', bg: 'rgba(6,182,212,0.12)',   ic: '🚗', lbl: '이동' },
       rest:    { c: '#94a3b8', bg: 'rgba(148,163,184,0.12)', ic: '🛋️', lbl: '휴식' },
-      nap:     { c: '#a78bfa', bg: 'rgba(167,139,250,0.12)', ic: '😴', lbl: '낮잠' },
       vit:     { c: '#ec4899', bg: 'rgba(236,72,153,0.12)',  ic: '💊', lbl: '영양제' },
     };
 
     const FOOD = {
-      '점보400':              { kcal: 650, p: 25 },
-      '닭가슴살 볶음밥':       { kcal: 600, p: 40 },
-      '닭가슴살 스테이크':     { kcal: 160, p: 15 },
-      '닭가슴살 스테이크 ×2':  { kcal: 320, p: 30 },
-      '삶은계란 2개':          { kcal: 150, p: 13 },
-      '바나나':                { kcal: 90,  p: 1 },
-      '그릭요거트':            { kcal: 120, p: 15 },
-      '프로틴 음료':           { kcal: 150, p: 25 },
-      '견과류 한줌':           { kcal: 150, p: 5 },
-      '닭가슴살 소시지 2개':   { kcal: 160, p: 26 },
-      '단백질바':              { kcal: 200, p: 18 },
-      '고구마':                { kcal: 130, p: 2 },
-      '두유 무가당':           { kcal: 100, p: 9 },
+      '점보400':            { kcal: 650, p: 25 },
+      '닭가슴살 볶음밥':     { kcal: 600, p: 40 },
+      '닭가슴살 스테이크':   { kcal: 160, p: 15 },
+      '삶은계란 2개':        { kcal: 150, p: 13 },
+      '바나나':              { kcal: 90,  p: 1 },
+      '그릭요거트':          { kcal: 120, p: 15 },
+      '프로틴 음료':         { kcal: 150, p: 25 },
+      '닭가슴살 소시지 2개': { kcal: 160, p: 26 },
+      '단백질바':            { kcal: 200, p: 18 },
+      '고구마':              { kcal: 130, p: 2 },
+      '두유 무가당':         { kcal: 100, p: 9 },
+      '견과류 한줌':         { kcal: 150, p: 5 },
     };
 
+    const VIT_AM = '비타민 D3 + 오메가3 + B복합 + 종합 + 크레아틴 5g';
+    const VIT_PM = '마그네슘 글리시네이트 300mg';
+
     const WO = {
-      light: {
-        push: { name: 'Push (Light)', desc: '벤치 + 숄더프레스 + 카디오 10분', dur: 45 },
-        pull: { name: 'Pull (Light)', desc: '랫풀다운 + 컬 + 카디오 10분',    dur: 45 },
-        legs: { name: 'Legs (Light)', desc: '스쿼트 + 레그프레스 + 카디오 10분', dur: 45 },
-        liss: { name: 'LISS',         desc: '저강도 유산소 30분',               dur: 30 },
-        full: { name: 'Full (Light)', desc: '컴파운드 3종 + 카디오 15분',       dur: 50 },
-        rest: { name: '휴식',         desc: '가벼운 스트레칭만',                 dur: 0  },
+      standard: {
+        push: { name: 'Push',  desc: '근력 60min (가슴/어깨/삼두) + 유산소 20min', dur: 90 },
+        pull: { name: 'Pull',  desc: '근력 60min (등/이두) + 유산소 20min',         dur: 90 },
+        legs: { name: 'Legs',  desc: '근력 60min (하체/코어) + 유산소 20min',        dur: 90 },
+        full: { name: 'Full',  desc: '컴파운드 60min + 유산소 20min',                dur: 90 },
+        liss: { name: 'LISS',  desc: '저강도 유산소 30min (회복용)',                  dur: 30 },
+        rest: { name: '휴식',  desc: '회복일 · 가벼운 스트레칭만',                     dur: 0  },
       },
-      normal: {
-        push: { name: 'Push',  desc: '가슴 / 어깨 / 삼두 + 카디오 15분', dur: 75 },
-        pull: { name: 'Pull',  desc: '등 / 이두 + 카디오 15분',          dur: 75 },
-        legs: { name: 'Legs',  desc: '하체 + 코어 + 카디오 10분',         dur: 75 },
-        liss: { name: 'LISS',  desc: '저강도 유산소',                      dur: 40 },
-        full: { name: 'Full',  desc: '전신 + 카디오 20분',                 dur: 75 },
-        rest: { name: '휴식',  desc: '회복일 · 가벼운 스트레칭만',          dur: 0  },
+      quick: {
+        push: { name: 'Push (Quick)', desc: '근력 40min + 유산소 15min', dur: 55 },
+        pull: { name: 'Pull (Quick)', desc: '근력 40min + 유산소 15min', dur: 55 },
+        legs: { name: 'Legs (Quick)', desc: '근력 40min + 유산소 15min', dur: 55 },
+        full: { name: 'Full (Quick)', desc: '컴파운드 3종 40min + 유산소 15min', dur: 55 },
+        liss: { name: 'LISS', desc: '가벼운 유산소 25min', dur: 25 },
+        rest: { name: '휴식', desc: '회복일', dur: 0 },
       },
     };
 
     const VITAMINS = [
-      { name: '비타민 D3', dose: '2,000-4,000 IU', when: '아침 식사 후', why: '나이트 근무자 햇빛 부족 보충 · 면역/뼈' },
-      { name: '오메가 3', dose: 'EPA+DHA 1,000-2,000mg', when: '아침 식사 후', why: '항염 · 심혈관 · 지용성이라 식사와 함께' },
-      { name: '마그네슘 글리시네이트', dose: '200-400mg', when: '취침 30분 전', why: '수면 질 + 근육 회복 + 변비 방지' },
-      { name: '비타민 B 복합', dose: '1정', when: '아침 (12시 전)', why: '교대근무 만성피로 · 에너지 대사 · 늦게 먹으면 잠 방해' },
-      { name: '종합비타민', dose: '1정', when: '아침 식사 후', why: '안전망 · 미량영양소 결핍 방지' },
-      { name: '크레아틴 모노', dose: '5g 매일', when: '시간 무관 (운동일 전후 권장)', why: '근육량/근력 + 인지 기능' },
+      { name: '비타민 D3', dose: '2,000-4,000 IU', when: '아침', why: '나이트 근무자 햇빛 부족 보충' },
+      { name: '오메가 3', dose: 'EPA+DHA 1,000-2,000mg', when: '아침', why: '항염 · 심혈관 · 지용성' },
+      { name: '비타민 B 복합', dose: '1정', when: '아침', why: '교대근무 피로 · 에너지 대사' },
+      { name: '종합비타민', dose: '1정', when: '아침', why: '미량영양소 안전망' },
+      { name: '크레아틴 모노', dose: '5g 매일', when: '아침 (시간 무관)', why: '근육량/근력 + 인지' },
+      { name: '마그네슘 글리시네이트', dose: '300mg', when: '취침 30분 전', why: '수면 질 + 근육 회복' },
     ];
 
-    // ─────────────── 8개 스케쥴 ───────────────
     const SHIFTS = [
       {
         id: 'DD', name: '데이 데이', sub: 'DAY · DAY', emoji: '☀️☀️',
@@ -165,20 +146,20 @@
             meta: { sleep: { from: '22:30', to: '06:30', hrs: 8 }, caffeine: { cutoff: '14:30' }, woKey: 'push', workoutTime: '19:30' },
             items: [
               { t: '06:30', act: 'wake',    text: '기상 · 물 500ml · 햇빛' },
-              { t: '07:00', act: 'meal',    text: '아침', food: '점보400' },
-              { t: '07:10', act: 'vit',     text: '비타민 D3 + 오메가3 + 종합비타민' },
+              { t: '07:00', act: 'meal',    text: '아침 (숙소)', food: '닭가슴살 볶음밥' },
+              { t: '07:10', act: 'vit',     text: VIT_AM },
               { t: '07:30', act: 'coffee',  text: '아메리카노 1잔' },
-              { t: '08:30', act: 'travel',  text: '출근 (도시락: 볶음밥 + 스테이크)' },
+              { t: '08:30', act: 'travel',  text: '출근 (도시락: 점보400 + 스테이크)' },
               { t: '09:00', act: 'workD',   text: '데이 근무 시작' },
-              { t: '12:00', act: 'meal',    text: '점심 도시락', food: '닭가슴살 볶음밥' },
-              { t: '14:00', act: 'coffee',  text: '마지막 커피' },
-              { t: '15:00', act: 'meal',    text: '오후 간식', food: '닭가슴살 스테이크 ×2' },
-              { t: '15:00', act: 'snack',   text: '+ 요거트', food: '그릭요거트' },
+              { t: '12:00', act: 'meal',    text: '점심 도시락', food: '점보400' },
+              { t: '12:00', act: 'meal',    text: '+ 스테이크', food: '닭가슴살 스테이크' },
+              { t: '14:30', act: 'coffee',  text: '마지막 커피' },
               { t: '18:00', act: 'workD',   text: '퇴근' },
-              { t: '18:30', act: 'meal',    text: '저녁: 스테이크 + 채소', food: '닭가슴살 스테이크 ×2' },
-              { t: '19:30', act: 'workout', text: '헬스 · Push' },
-              { t: '20:45', act: 'snack',   text: '운동 후 단백질', food: '프로틴 음료' },
-              { t: '22:00', act: 'vit',     text: '마그네슘 (수면 보조)' },
+              { t: '18:30', act: 'meal',    text: '저녁 (숙소)', food: '닭가슴살 볶음밥' },
+              { t: '19:30', act: 'workout', text: '헬스 · Push (90min)' },
+              { t: '21:00', act: 'meal',    text: '운동 후 야식', food: '닭가슴살 스테이크' },
+              { t: '21:00', act: 'snack',   text: '+ 단백질', food: '프로틴 음료' },
+              { t: '22:00', act: 'vit',     text: VIT_PM },
               { t: '22:30', act: 'sleep',   text: '취침 · 폰 30분 전 OFF' },
             ],
           },
@@ -187,26 +168,25 @@
             meta: { sleep: { from: '22:30', to: '06:30', hrs: 8 }, caffeine: { cutoff: '14:30' }, woKey: 'pull', workoutTime: '19:30' },
             items: [
               { t: '06:30', act: 'wake',    text: '기상' },
-              { t: '07:00', act: 'meal',    text: '아침', food: '점보400' },
-              { t: '07:10', act: 'vit',     text: '비타민 D3 + 오메가3' },
+              { t: '07:00', act: 'meal',    text: '아침 (숙소)', food: '닭가슴살 볶음밥' },
+              { t: '07:10', act: 'vit',     text: VIT_AM },
               { t: '07:30', act: 'coffee',  text: '커피 1잔' },
               { t: '08:30', act: 'travel',  text: '출근' },
               { t: '09:00', act: 'workD',   text: '데이 근무' },
-              { t: '12:00', act: 'meal',    text: '점심 도시락', food: '닭가슴살 볶음밥' },
-              { t: '14:00', act: 'coffee',  text: '마지막 커피' },
-              { t: '15:00', act: 'meal',    text: '오후 간식', food: '닭가슴살 스테이크 ×2' },
-              { t: '15:00', act: 'snack',   text: '+ 요거트', food: '그릭요거트' },
+              { t: '12:00', act: 'meal',    text: '점심 도시락', food: '점보400' },
+              { t: '12:00', act: 'meal',    text: '+ 스테이크', food: '닭가슴살 스테이크' },
+              { t: '14:30', act: 'coffee',  text: '마지막 커피' },
               { t: '18:00', act: 'workD',   text: '퇴근' },
-              { t: '18:30', act: 'meal',    text: '저녁', food: '닭가슴살 스테이크 ×2' },
-              { t: '19:30', act: 'workout', text: '헬스 · Pull' },
-              { t: '20:45', act: 'snack',   text: '단백질 보충', food: '프로틴 음료' },
-              { t: '22:00', act: 'vit',     text: '마그네슘' },
+              { t: '18:30', act: 'meal',    text: '저녁 (숙소)', food: '닭가슴살 볶음밥' },
+              { t: '19:30', act: 'workout', text: '헬스 · Pull (90min)' },
+              { t: '21:00', act: 'meal',    text: '운동 후 야식', food: '닭가슴살 스테이크' },
+              { t: '21:00', act: 'snack',   text: '+ 단백질', food: '프로틴 음료' },
+              { t: '22:00', act: 'vit',     text: VIT_PM },
               { t: '22:30', act: 'sleep',   text: '취침' },
             ],
           },
         ],
       },
-
       {
         id: 'DN', name: '데이 나이트', sub: 'DAY · NIGHT', emoji: '☀️🌙',
         loc: '구미 · 구미', desc: '데이 후 다음날 나이트',
@@ -217,45 +197,45 @@
             meta: { sleep: { from: '21:30', to: '09:30', hrs: 12, note: 'Sleep banking · 내일 나이트 대비' }, caffeine: { cutoff: '13:30' }, woKey: 'rest', workoutTime: null },
             items: [
               { t: '06:30', act: 'wake',    text: '기상' },
-              { t: '07:00', act: 'meal',    text: '아침', food: '점보400' },
-              { t: '07:10', act: 'vit',     text: '비타민 D3 + 오메가3' },
+              { t: '07:00', act: 'meal',    text: '아침 (숙소)', food: '닭가슴살 볶음밥' },
+              { t: '07:10', act: 'vit',     text: VIT_AM },
               { t: '07:30', act: 'coffee',  text: '커피' },
               { t: '09:00', act: 'workD',   text: '데이 근무' },
-              { t: '12:00', act: 'meal',    text: '점심', food: '닭가슴살 볶음밥' },
-              { t: '13:30', act: 'coffee',  text: '마지막 커피 (오늘 일찍 잘 거라 일찍 컷)' },
-              { t: '15:00', act: 'meal',    text: '오후 간식', food: '닭가슴살 스테이크 ×2' },
-              { t: '15:00', act: 'snack',   text: '+ 요거트', food: '그릭요거트' },
+              { t: '12:00', act: 'meal',    text: '점심 도시락', food: '점보400' },
+              { t: '12:00', act: 'meal',    text: '+ 스테이크', food: '닭가슴살 스테이크' },
+              { t: '13:30', act: 'coffee',  text: '마지막 커피 (일찍 컷)' },
               { t: '18:00', act: 'workD',   text: '퇴근' },
-              { t: '18:30', act: 'meal',    text: '저녁', food: '닭가슴살 스테이크 ×2' },
-              { t: '21:00', act: 'vit',     text: '마그네슘' },
+              { t: '18:30', act: 'meal',    text: '저녁 (숙소)', food: '닭가슴살 볶음밥' },
+              { t: '20:30', act: 'snack',   text: '가벼운 야식', food: '그릭요거트' },
+              { t: '21:00', act: 'vit',     text: VIT_PM },
               { t: '21:30', act: 'sleep',   text: 'Sleep banking', note: '암막 + 18-20℃' },
             ],
           },
           {
             title: 'Day 2 · 나이트', loc: '구미',
-            meta: { sleep: { from: '21:30 (전날)', to: '09:30', hrs: 12, note: '+ 15:00 nap 20min' }, caffeine: { cutoff: '03:00' }, woKey: 'legs', workoutTime: '11:00' },
+            meta: { sleep: { from: '21:30 (전날)', to: '09:30', hrs: 12 }, caffeine: { cutoff: '03:00' }, woKey: 'legs', workoutTime: '11:00' },
             items: [
               { t: '09:30', act: 'wake',    text: '기상 · 햇빛 노출' },
-              { t: '10:00', act: 'meal',    text: '브런치', food: '점보400' },
-              { t: '10:10', act: 'vit',     text: '비타민 D3 + 오메가3 + B복합' },
-              { t: '11:00', act: 'workout', text: '헬스 · Legs' },
-              { t: '13:00', act: 'meal',    text: '점심', food: '닭가슴살 볶음밥' },
-              { t: '15:00', act: 'nap',     text: 'Power nap 20분', note: 'REM 전 · sleep inertia 회피' },
-              { t: '16:30', act: 'meal',    text: '이른 저녁 + 도시락', food: '닭가슴살 스테이크 ×2' },
+              { t: '10:00', act: 'meal',    text: '브런치 (숙소)', food: '닭가슴살 볶음밥' },
+              { t: '10:10', act: 'vit',     text: VIT_AM },
+              { t: '11:00', act: 'workout', text: '헬스 · Legs (90min)' },
+              { t: '13:00', act: 'meal',    text: '점심 (숙소)', food: '닭가슴살 스테이크' },
+              { t: '13:00', act: 'snack',   text: '+', food: '그릭요거트' },
+              { t: '16:30', act: 'meal',    text: '이른 저녁 + 도시락', food: '닭가슴살 볶음밥' },
               { t: '17:30', act: 'travel',  text: '출근' },
               { t: '18:00', act: 'workN',   text: '나이트 시작' },
               { t: '18:30', act: 'coffee',  text: '근무 초반 커피' },
-              { t: '22:00', act: 'meal',    text: '야식', food: '닭가슴살 스테이크 ×2' },
-              { t: '22:00', act: 'snack',   text: '+ 요거트', food: '그릭요거트' },
+              { t: '22:00', act: 'meal',    text: '야식 (직장)', food: '닭가슴살 스테이크' },
+              { t: '22:00', act: 'snack',   text: '+ 편의점', food: '단백질바' },
               { t: '01:30', act: 'coffee',  text: '새벽 카페인 (마지막)' },
-              { t: '02:00', act: 'snack',   text: '단백질바', food: '단백질바' },
+              { t: '02:00', act: 'meal',    text: '새벽 식사 (직장)', food: '점보400' },
               { t: '05:30', act: 'snack',   text: '새벽 간식', food: '바나나' },
+              { t: '05:30', act: 'snack',   text: '+', food: '두유 무가당' },
               { t: '09:00', act: 'workN',   text: '퇴근' },
             ],
           },
         ],
       },
-
       {
         id: 'NN', name: '나이트 나이트', sub: 'NIGHT · NIGHT', emoji: '🌙🌙',
         loc: '구미 · 구미', desc: '연속 나이트 · 회복 수면 핵심',
@@ -266,17 +246,19 @@
             meta: { sleep: { from: '(전날)', to: '14:00', hrs: '7-8' }, caffeine: { cutoff: '03:00' }, woKey: 'liss', workoutTime: '15:30' },
             items: [
               { t: '14:00', act: 'wake',    text: '기상 · 햇빛/물' },
-              { t: '14:30', act: 'meal',    text: '브런치', food: '점보400' },
-              { t: '14:40', act: 'vit',     text: '비타민 D3 + 오메가3 + B복합' },
-              { t: '15:30', act: 'workout', text: '가벼운 유산소' },
-              { t: '17:00', act: 'meal',    text: '저녁 + 도시락', food: '닭가슴살 볶음밥' },
+              { t: '14:30', act: 'meal',    text: '브런치 (숙소)', food: '닭가슴살 볶음밥' },
+              { t: '14:40', act: 'vit',     text: VIT_AM },
+              { t: '15:30', act: 'workout', text: '가벼운 유산소 30min' },
+              { t: '17:00', act: 'meal',    text: '이른 저녁 + 도시락', food: '닭가슴살 볶음밥' },
               { t: '17:30', act: 'travel',  text: '출근' },
               { t: '18:00', act: 'workN',   text: '나이트 시작' },
-              { t: '18:30', act: 'coffee',  text: '커피 1잔' },
-              { t: '22:00', act: 'meal',    text: '야식', food: '닭가슴살 스테이크 ×2' },
+              { t: '18:30', act: 'coffee',  text: '커피' },
+              { t: '22:00', act: 'meal',    text: '야식 (직장)', food: '닭가슴살 스테이크' },
+              { t: '22:00', act: 'snack',   text: '+ 편의점', food: '단백질바' },
               { t: '01:30', act: 'coffee',  text: '마지막 커피' },
-              { t: '02:00', act: 'snack',   text: '단백질바', food: '단백질바' },
-              { t: '05:30', act: 'snack',   text: '간식', food: '바나나' },
+              { t: '02:00', act: 'meal',    text: '새벽 식사 (직장)', food: '점보400' },
+              { t: '05:30', act: 'snack',   text: '새벽 간식', food: '그릭요거트' },
+              { t: '05:30', act: 'snack',   text: '+', food: '바나나' },
             ],
           },
           {
@@ -284,26 +266,26 @@
             meta: { sleep: { from: '10:30', to: '17:00', hrs: 6.5, note: 'Anchor sleep · 암막 + 백색소음' }, caffeine: { cutoff: '03:00' }, woKey: 'rest', workoutTime: null },
             items: [
               { t: '09:00', act: 'workN',   text: '퇴근 · 선글라스', note: '청광 차단 → 멜라토닌 보존' },
-              { t: '09:30', act: 'meal',    text: '가벼운 아침', food: '삶은계란 2개' },
-              { t: '09:30', act: 'snack',   text: '+ 두유', food: '두유 무가당' },
-              { t: '10:15', act: 'vit',     text: '마그네슘 (회복 잠 보조)' },
+              { t: '09:30', act: 'snack',   text: '가벼운 아침', food: '그릭요거트' },
+              { t: '09:30', act: 'snack',   text: '+', food: '두유 무가당' },
+              { t: '10:15', act: 'vit',     text: VIT_PM },
               { t: '10:30', act: 'sleep',   text: 'Anchor sleep', note: '암막 · 18-20℃ · 귀마개' },
               { t: '17:00', act: 'wake',    text: '기상' },
-              { t: '17:30', act: 'meal',    text: '든든히 + 도시락', food: '닭가슴살 볶음밥' },
-              { t: '17:30', act: 'meal',    text: '+ 스테이크', food: '닭가슴살 스테이크' },
+              { t: '17:30', act: 'meal',    text: '저녁 + 도시락', food: '닭가슴살 볶음밥' },
+              { t: '17:40', act: 'vit',     text: VIT_AM },
               { t: '17:45', act: 'travel',  text: '출근' },
               { t: '18:00', act: 'workN',   text: '나이트 시작' },
               { t: '18:30', act: 'coffee',  text: '커피' },
-              { t: '22:00', act: 'meal',    text: '야식', food: '닭가슴살 스테이크 ×2' },
+              { t: '22:00', act: 'meal',    text: '야식 (직장)', food: '닭가슴살 스테이크' },
+              { t: '22:00', act: 'snack',   text: '+ 편의점', food: '프로틴 음료' },
               { t: '01:30', act: 'coffee',  text: '마지막 커피' },
-              { t: '02:00', act: 'snack',   text: '단백질바', food: '단백질바' },
+              { t: '02:00', act: 'meal',    text: '새벽 식사', food: '점보400' },
               { t: '05:30', act: 'snack',   text: '새벽 간식', food: '삶은계란 2개' },
               { t: '09:00', act: 'workN',   text: '퇴근' },
             ],
           },
         ],
       },
-
       {
         id: 'NO', name: '나이트 오프', sub: 'NIGHT · OFF', emoji: '🌙🏝️',
         loc: '구미 → 평누도', desc: '나이트 후 회복수면 → 평누도',
@@ -314,15 +296,16 @@
             meta: { sleep: { from: '(전날)', to: '14:00', hrs: '7-8' }, caffeine: { cutoff: '03:00' }, woKey: 'liss', workoutTime: '15:30' },
             items: [
               { t: '14:00', act: 'wake',    text: '기상' },
-              { t: '14:30', act: 'meal',    text: '브런치', food: '점보400' },
-              { t: '14:40', act: 'vit',     text: '비타민 D3 + 오메가3 + B복합' },
-              { t: '15:30', act: 'workout', text: '가벼운 유산소' },
-              { t: '17:00', act: 'meal',    text: '저녁 + 도시락', food: '닭가슴살 볶음밥' },
+              { t: '14:30', act: 'meal',    text: '브런치 (숙소)', food: '닭가슴살 볶음밥' },
+              { t: '14:40', act: 'vit',     text: VIT_AM },
+              { t: '15:30', act: 'workout', text: '가벼운 유산소 30min' },
+              { t: '17:00', act: 'meal',    text: '이른 저녁 + 도시락', food: '닭가슴살 볶음밥' },
               { t: '17:30', act: 'travel',  text: '출근' },
               { t: '18:00', act: 'workN',   text: '나이트 시작' },
-              { t: '22:00', act: 'meal',    text: '야식', food: '닭가슴살 스테이크 ×2' },
+              { t: '22:00', act: 'meal',    text: '야식 (직장)', food: '닭가슴살 스테이크' },
+              { t: '22:00', act: 'snack',   text: '+', food: '단백질바' },
               { t: '01:30', act: 'coffee',  text: '마지막 커피' },
-              { t: '02:00', act: 'snack',   text: '단백질바', food: '단백질바' },
+              { t: '02:00', act: 'meal',    text: '새벽 식사', food: '점보400' },
               { t: '05:30', act: 'snack',   text: '간식', food: '바나나' },
             ],
           },
@@ -332,22 +315,21 @@
               drive: { from: '14:30', to: '18:30', dur: 4, risk: '주의', tip: '출발 전 진한 커피 · 휴게소 1회 정차' } },
             items: [
               { t: '09:00', act: 'workN',   text: '퇴근 · 선글라스' },
-              { t: '09:30', act: 'meal',    text: '가벼운 아침', food: '삶은계란 2개' },
-              { t: '09:45', act: 'vit',     text: '마그네슘 (잠 보조)' },
-              { t: '10:00', act: 'sleep',   text: '회복 수면 3.5h', note: '핵심 회복 잠 · 절대 카페인 X' },
+              { t: '09:30', act: 'snack',   text: '가벼운 아침', food: '삶은계란 2개' },
+              { t: '09:45', act: 'vit',     text: VIT_PM },
+              { t: '10:00', act: 'sleep',   text: '회복 수면 3.5h', note: '핵심 회복 잠' },
               { t: '13:30', act: 'wake',    text: '기상 · 햇빛/샤워' },
-              { t: '14:00', act: 'meal',    text: '점심', food: '닭가슴살 볶음밥' },
+              { t: '14:00', act: 'meal',    text: '점심 (숙소)', food: '닭가슴살 볶음밥' },
               { t: '14:15', act: 'coffee',  text: '운전 전 커피' },
-              { t: '14:30', act: 'travel',  text: '평누도로 출발 (4h)', note: '졸음 시 무조건 휴게소 · 20분 nap' },
+              { t: '14:30', act: 'travel',  text: '평누도로 출발 (4h)', note: '졸음 시 무조건 휴게소 정차' },
               { t: '18:30', act: 'rest',    text: '평누도 도착' },
-              { t: '19:00', act: 'meal',    text: '저녁', food: '닭가슴살 스테이크 ×2' },
-              { t: '22:00', act: 'vit',     text: '마그네슘' },
+              { t: '19:00', act: 'meal',    text: '저녁', food: '닭가슴살 볶음밥' },
+              { t: '22:00', act: 'vit',     text: VIT_PM },
               { t: '22:30', act: 'sleep',   text: '취침 · circadian 재정렬' },
             ],
           },
         ],
       },
-
       {
         id: 'DO', name: '데이 오프', sub: 'DAY · OFF', emoji: '☀️🏝️',
         loc: '구미 → 평누도', desc: '데이 끝나고 즉시 평누도',
@@ -356,22 +338,23 @@
           {
             title: 'Day 1 · 데이', loc: '구미 → 평누도',
             meta: { sleep: { from: '23:00', to: '08:30', hrs: 9.5 }, caffeine: { cutoff: '17:00', note: '퇴근 전 1잔, 운전용' }, woKey: 'rest', workoutTime: null,
-              drive: { from: '18:00', to: '22:00', dur: 4, risk: '주의', tip: '19:00경 휴게소 power nap 20분' } },
+              drive: { from: '18:00', to: '22:00', dur: 4, risk: '주의', tip: '19:00경 휴게소 휴식 + 가벼운 식사' } },
             items: [
               { t: '06:30', act: 'wake',    text: '기상' },
-              { t: '07:00', act: 'meal',    text: '아침', food: '점보400' },
-              { t: '07:10', act: 'vit',     text: '비타민 D3 + 오메가3' },
+              { t: '07:00', act: 'meal',    text: '아침 (숙소)', food: '닭가슴살 볶음밥' },
+              { t: '07:10', act: 'vit',     text: VIT_AM },
               { t: '07:30', act: 'coffee',  text: '커피' },
-              { t: '08:30', act: 'travel',  text: '출근 (저녁 도시락 추가)' },
+              { t: '08:30', act: 'travel',  text: '출근' },
               { t: '09:00', act: 'workD',   text: '데이 근무' },
-              { t: '12:00', act: 'meal',    text: '점심', food: '닭가슴살 볶음밥' },
-              { t: '15:00', act: 'snack',   text: '오후 간식', food: '그릭요거트' },
+              { t: '12:00', act: 'meal',    text: '점심 도시락', food: '점보400' },
+              { t: '12:00', act: 'meal',    text: '+ 스테이크', food: '닭가슴살 스테이크' },
               { t: '17:00', act: 'coffee',  text: '퇴근 전 커피 (운전용)' },
               { t: '18:00', act: 'travel',  text: '평누도 출발 (4h)' },
-              { t: '19:30', act: 'meal',    text: '휴게소 저녁 + nap 20분', food: '닭가슴살 스테이크 ×2', note: 'Power nap (REM 전)' },
+              { t: '19:30', act: 'snack',   text: '휴게소 가벼운 식사', food: '단백질바' },
+              { t: '19:30', act: 'snack',   text: '+', food: '바나나' },
               { t: '22:00', act: 'rest',    text: '평누도 도착' },
-              { t: '22:30', act: 'snack',   text: '취침 전 단백질', food: '프로틴 음료' },
-              { t: '22:40', act: 'vit',     text: '마그네슘' },
+              { t: '22:15', act: 'snack',   text: '단백질 보충', food: '프로틴 음료' },
+              { t: '22:40', act: 'vit',     text: VIT_PM },
               { t: '23:00', act: 'sleep',   text: '취침' },
             ],
           },
@@ -380,22 +363,23 @@
             meta: { sleep: { from: '22:30', to: '08:30', hrs: 10, note: '수면 부채 회복' }, caffeine: { cutoff: '14:30' }, woKey: 'full', workoutTime: '11:00' },
             items: [
               { t: '08:30', act: 'wake',    text: '기상 · 충분히 잠' },
-              { t: '09:00', act: 'meal',    text: '아침', food: '점보400' },
-              { t: '09:10', act: 'vit',     text: '비타민 D3 + 오메가3 + B복합 + 종합' },
+              { t: '09:00', act: 'meal',    text: '아침', food: '닭가슴살 볶음밥' },
+              { t: '09:10', act: 'vit',     text: VIT_AM },
               { t: '10:00', act: 'coffee',  text: '커피' },
-              { t: '11:00', act: 'workout', text: '헬스 · Full body' },
-              { t: '13:00', act: 'meal',    text: '점심', food: '닭가슴살 볶음밥' },
+              { t: '11:00', act: 'workout', text: '헬스 · Full body (90min)' },
+              { t: '13:00', act: 'meal',    text: '점심', food: '닭가슴살 스테이크' },
+              { t: '13:00', act: 'snack',   text: '+', food: '그릭요거트' },
+              { t: '13:00', act: 'snack',   text: '+', food: '고구마' },
               { t: '14:30', act: 'coffee',  text: '마지막 커피' },
-              { t: '15:30', act: 'snack',   text: '오후 간식', food: '닭가슴살 스테이크 ×2' },
-              { t: '15:30', act: 'snack',   text: '+ 요거트', food: '그릭요거트' },
-              { t: '18:30', act: 'meal',    text: '저녁', food: '닭가슴살 스테이크 ×2' },
-              { t: '22:00', act: 'vit',     text: '마그네슘' },
+              { t: '18:30', act: 'meal',    text: '저녁', food: '닭가슴살 볶음밥' },
+              { t: '21:00', act: 'meal',    text: '가벼운 야식', food: '닭가슴살 스테이크' },
+              { t: '21:00', act: 'snack',   text: '+', food: '프로틴 음료' },
+              { t: '22:00', act: 'vit',     text: VIT_PM },
               { t: '22:30', act: 'sleep',   text: '취침' },
             ],
           },
         ],
       },
-
       {
         id: 'OO', name: '오프 오프', sub: 'OFF · OFF', emoji: '🏝️🏝️',
         loc: '평누도 · 평누도', desc: '양일 평누도 · 운동 강도일',
@@ -406,16 +390,18 @@
             meta: { sleep: { from: '22:30', to: '07:00', hrs: 8.5 }, caffeine: { cutoff: '14:30' }, woKey: 'push', workoutTime: '10:30' },
             items: [
               { t: '07:00', act: 'wake',    text: '기상' },
-              { t: '07:30', act: 'meal',    text: '아침', food: '점보400' },
-              { t: '07:40', act: 'vit',     text: '비타민 D3 + 오메가3 + 종합' },
+              { t: '07:30', act: 'meal',    text: '아침', food: '닭가슴살 볶음밥' },
+              { t: '07:40', act: 'vit',     text: VIT_AM },
               { t: '08:00', act: 'coffee',  text: '커피' },
-              { t: '10:30', act: 'workout', text: '헬스 · Push' },
-              { t: '12:00', act: 'meal',    text: '점심', food: '닭가슴살 볶음밥' },
+              { t: '10:30', act: 'workout', text: '헬스 · Push (90min)' },
+              { t: '13:00', act: 'meal',    text: '점심', food: '닭가슴살 스테이크' },
+              { t: '13:00', act: 'snack',   text: '+', food: '그릭요거트' },
+              { t: '13:00', act: 'snack',   text: '+', food: '고구마' },
               { t: '14:30', act: 'coffee',  text: '마지막 커피' },
-              { t: '15:00', act: 'snack',   text: '오후 간식', food: '닭가슴살 스테이크 ×2' },
-              { t: '15:00', act: 'snack',   text: '+ 요거트', food: '그릭요거트' },
-              { t: '18:30', act: 'meal',    text: '저녁', food: '닭가슴살 스테이크 ×2' },
-              { t: '22:00', act: 'vit',     text: '마그네슘' },
+              { t: '18:30', act: 'meal',    text: '저녁', food: '닭가슴살 볶음밥' },
+              { t: '21:00', act: 'meal',    text: '가벼운 야식', food: '닭가슴살 스테이크' },
+              { t: '21:00', act: 'snack',   text: '+', food: '프로틴 음료' },
+              { t: '22:00', act: 'vit',     text: VIT_PM },
               { t: '22:30', act: 'sleep',   text: '취침' },
             ],
           },
@@ -424,21 +410,22 @@
             meta: { sleep: { from: '22:30', to: '07:00', hrs: 8.5 }, caffeine: { cutoff: '14:30' }, woKey: 'pull', workoutTime: '10:30' },
             items: [
               { t: '07:00', act: 'wake',    text: '기상' },
-              { t: '07:30', act: 'meal',    text: '아침', food: '점보400' },
-              { t: '07:40', act: 'vit',     text: '비타민 D3 + 오메가3' },
-              { t: '10:30', act: 'workout', text: '헬스 · Pull' },
-              { t: '12:00', act: 'meal',    text: '점심', food: '닭가슴살 볶음밥' },
+              { t: '07:30', act: 'meal',    text: '아침', food: '닭가슴살 볶음밥' },
+              { t: '07:40', act: 'vit',     text: VIT_AM },
+              { t: '10:30', act: 'workout', text: '헬스 · Pull (90min)' },
+              { t: '13:00', act: 'meal',    text: '점심', food: '닭가슴살 스테이크' },
+              { t: '13:00', act: 'snack',   text: '+', food: '그릭요거트' },
+              { t: '13:00', act: 'snack',   text: '+', food: '고구마' },
               { t: '14:30', act: 'coffee',  text: '마지막 커피' },
-              { t: '15:00', act: 'snack',   text: '오후 간식', food: '닭가슴살 스테이크 ×2' },
-              { t: '15:00', act: 'snack',   text: '+ 요거트', food: '그릭요거트' },
-              { t: '18:30', act: 'meal',    text: '저녁', food: '닭가슴살 스테이크 ×2' },
-              { t: '22:00', act: 'vit',     text: '마그네슘' },
+              { t: '18:30', act: 'meal',    text: '저녁', food: '닭가슴살 볶음밥' },
+              { t: '21:00', act: 'meal',    text: '가벼운 야식', food: '닭가슴살 스테이크' },
+              { t: '21:00', act: 'snack',   text: '+', food: '단백질바' },
+              { t: '22:00', act: 'vit',     text: VIT_PM },
               { t: '22:30', act: 'sleep',   text: '취침' },
             ],
           },
         ],
       },
-
       {
         id: 'OD', name: '오프 데이', sub: 'OFF · DAY', emoji: '🏝️☀️',
         loc: '평누도 → 구미', desc: '운전 방식 선택',
@@ -453,17 +440,18 @@
                 meta: { sleep: { from: '21:00', to: '04:30', hrs: 7.5, note: '내일 새벽 출발 대비' }, caffeine: { cutoff: '12:30', note: '취침 8.5h 전 컷' }, woKey: 'legs', workoutTime: '09:30' },
                 items: [
                   { t: '07:30', act: 'wake',    text: '기상 · 일찍 시작' },
-                  { t: '08:00', act: 'meal',    text: '아침', food: '점보400' },
-                  { t: '08:10', act: 'vit',     text: '비타민 D3 + 오메가3 + B복합' },
-                  { t: '09:30', act: 'workout', text: '헬스 · Legs' },
-                  { t: '11:30', act: 'meal',    text: '점심', food: '닭가슴살 볶음밥' },
+                  { t: '08:00', act: 'meal',    text: '아침', food: '닭가슴살 볶음밥' },
+                  { t: '08:10', act: 'vit',     text: VIT_AM },
+                  { t: '09:30', act: 'workout', text: '헬스 · Legs (90min)' },
+                  { t: '11:30', act: 'meal',    text: '점심', food: '닭가슴살 스테이크' },
+                  { t: '11:30', act: 'snack',   text: '+', food: '그릭요거트' },
+                  { t: '11:30', act: 'snack',   text: '+', food: '고구마' },
                   { t: '12:30', act: 'coffee',  text: '마지막 커피' },
-                  { t: '15:00', act: 'snack',   text: '오후 간식', food: '닭가슴살 스테이크 ×2' },
-                  { t: '15:00', act: 'snack',   text: '+ 요거트', food: '그릭요거트' },
-                  { t: '18:00', act: 'meal',    text: '저녁', food: '닭가슴살 스테이크 ×2' },
-                  { t: '20:00', act: 'rest',    text: '도시락 · 짐 챙김' },
-                  { t: '20:30', act: 'vit',     text: '마그네슘' },
-                  { t: '21:00', act: 'sleep',   text: '취침 (7.5h)', note: '암막 + 차분히' },
+                  { t: '17:00', act: 'meal',    text: '이른 저녁', food: '닭가슴살 볶음밥' },
+                  { t: '19:00', act: 'snack',   text: '단백질 보충', food: '프로틴 음료' },
+                  { t: '20:00', act: 'rest',    text: '짐 챙김' },
+                  { t: '20:30', act: 'vit',     text: VIT_PM },
+                  { t: '21:00', act: 'sleep',   text: '취침 (7.5h)' },
                 ],
               },
               {
@@ -474,18 +462,19 @@
                   { t: '04:30', act: 'wake',    text: '기상 · 찬물 세수 + 강한 조명' },
                   { t: '04:45', act: 'coffee',  text: '진한 커피 (각성)' },
                   { t: '05:00', act: 'travel',  text: '구미로 출발 (3h)', note: '⚠️ 졸음 시 무조건 정차' },
-                  { t: '05:30', act: 'meal',    text: '차에서 아침', food: '점보400' },
                   { t: '06:30', act: 'coffee',  text: '휴게소 커피 2번째' },
                   { t: '08:00', act: 'travel',  text: '구미 도착' },
+                  { t: '08:15', act: 'meal',    text: '아침 (숙소)', food: '닭가슴살 볶음밥' },
+                  { t: '08:25', act: 'vit',     text: VIT_AM },
                   { t: '09:00', act: 'workD',   text: '데이 근무 시작' },
-                  { t: '12:00', act: 'meal',    text: '점심', food: '닭가슴살 볶음밥' },
+                  { t: '12:00', act: 'meal',    text: '점심 도시락', food: '점보400' },
+                  { t: '12:00', act: 'meal',    text: '+ 스테이크', food: '닭가슴살 스테이크' },
                   { t: '14:30', act: 'coffee',  text: '마지막 커피' },
-                  { t: '15:00', act: 'snack',   text: '오후 간식', food: '닭가슴살 스테이크 ×2' },
-                  { t: '15:00', act: 'snack',   text: '+ 요거트', food: '그릭요거트' },
                   { t: '18:00', act: 'workD',   text: '퇴근' },
-                  { t: '18:30', act: 'meal',    text: '저녁', food: '닭가슴살 스테이크 ×2' },
-                  { t: '20:00', act: 'rest',    text: '가벼운 스트레칭 (운동 X)' },
-                  { t: '21:30', act: 'vit',     text: '마그네슘' },
+                  { t: '18:30', act: 'meal',    text: '저녁', food: '닭가슴살 볶음밥' },
+                  { t: '20:00', act: 'rest',    text: '가벼운 스트레칭 (운동 X · 수면부채)' },
+                  { t: '21:00', act: 'snack',   text: '가벼운 야식', food: '프로틴 음료' },
+                  { t: '21:30', act: 'vit',     text: VIT_PM },
                   { t: '22:00', act: 'sleep',   text: '취침' },
                 ],
               },
@@ -496,24 +485,24 @@
             days: [
               {
                 title: 'Day 1 · 오프→이동', loc: '평누도 → 구미',
-                meta: { sleep: { from: '22:30', to: '06:30', hrs: 8 }, caffeine: { cutoff: '13:00', note: '저녁 운전 대비 일찍 컷' }, woKey: 'legs', workoutTime: '09:30',
-                  drive: { from: '19:00', to: '22:00', dur: 3, risk: '안전', tip: '저녁 식후 · 푹 쉰 컨디션 · 휴게소 1회 권장' } },
+                meta: { sleep: { from: '22:30', to: '06:30', hrs: 8 }, caffeine: { cutoff: '13:00' }, woKey: 'legs', workoutTime: '09:30',
+                  drive: { from: '19:00', to: '22:00', dur: 3, risk: '안전', tip: '저녁 식후 · 푹 쉰 컨디션' } },
                 items: [
                   { t: '07:00', act: 'wake',    text: '기상' },
-                  { t: '07:30', act: 'meal',    text: '아침', food: '점보400' },
-                  { t: '07:40', act: 'vit',     text: '비타민 D3 + 오메가3 + B복합' },
+                  { t: '07:30', act: 'meal',    text: '아침', food: '닭가슴살 볶음밥' },
+                  { t: '07:40', act: 'vit',     text: VIT_AM },
                   { t: '08:00', act: 'coffee',  text: '커피' },
-                  { t: '09:30', act: 'workout', text: '헬스 · Legs (오전에 끝내기)' },
-                  { t: '11:30', act: 'meal',    text: '점심', food: '닭가슴살 볶음밥' },
+                  { t: '09:30', act: 'workout', text: '헬스 · Legs (90min · 오전에 끝)' },
+                  { t: '11:30', act: 'meal',    text: '점심', food: '닭가슴살 스테이크' },
+                  { t: '11:30', act: 'snack',   text: '+', food: '그릭요거트' },
+                  { t: '11:30', act: 'snack',   text: '+', food: '고구마' },
                   { t: '13:00', act: 'coffee',  text: '마지막 커피' },
-                  { t: '15:00', act: 'snack',   text: '오후 간식', food: '닭가슴살 스테이크 ×2' },
-                  { t: '15:00', act: 'snack',   text: '+ 요거트', food: '그릭요거트' },
-                  { t: '17:30', act: 'meal',    text: '이른 저녁 (든든히)', food: '닭가슴살 스테이크 ×2' },
+                  { t: '17:30', act: 'meal',    text: '저녁 (든든히)', food: '닭가슴살 볶음밥' },
                   { t: '18:30', act: 'rest',    text: '짐 챙김' },
                   { t: '19:00', act: 'travel',  text: '구미로 출발 (3h)' },
                   { t: '22:00', act: 'rest',    text: '구미 숙소 도착' },
                   { t: '22:10', act: 'snack',   text: '취침 전 단백질', food: '프로틴 음료' },
-                  { t: '22:15', act: 'vit',     text: '마그네슘' },
+                  { t: '22:15', act: 'vit',     text: VIT_PM },
                   { t: '22:30', act: 'sleep',   text: '취침 (8h 확보)' },
                 ],
               },
@@ -522,18 +511,19 @@
                 meta: { sleep: { from: '22:30', to: '06:30', hrs: 8 }, caffeine: { cutoff: '14:30' }, woKey: 'rest', workoutTime: null },
                 items: [
                   { t: '06:30', act: 'wake',    text: '기상 (8h 풀잠 후)' },
-                  { t: '07:00', act: 'meal',    text: '아침', food: '점보400' },
-                  { t: '07:10', act: 'vit',     text: '비타민 D3 + 오메가3' },
+                  { t: '07:00', act: 'meal',    text: '아침 (숙소)', food: '닭가슴살 볶음밥' },
+                  { t: '07:10', act: 'vit',     text: VIT_AM },
                   { t: '07:30', act: 'coffee',  text: '커피' },
                   { t: '08:30', act: 'travel',  text: '출근' },
                   { t: '09:00', act: 'workD',   text: '데이 근무' },
-                  { t: '12:00', act: 'meal',    text: '점심', food: '닭가슴살 볶음밥' },
+                  { t: '12:00', act: 'meal',    text: '점심 도시락', food: '점보400' },
+                  { t: '12:00', act: 'meal',    text: '+ 스테이크', food: '닭가슴살 스테이크' },
                   { t: '14:30', act: 'coffee',  text: '마지막 커피' },
-                  { t: '15:00', act: 'snack',   text: '오후 간식', food: '닭가슴살 스테이크 ×2' },
-                  { t: '15:00', act: 'snack',   text: '+ 요거트', food: '그릭요거트' },
                   { t: '18:00', act: 'workD',   text: '퇴근' },
-                  { t: '18:30', act: 'meal',    text: '저녁', food: '닭가슴살 스테이크 ×2' },
-                  { t: '22:00', act: 'vit',     text: '마그네슘' },
+                  { t: '18:30', act: 'meal',    text: '저녁', food: '닭가슴살 볶음밥' },
+                  { t: '21:00', act: 'meal',    text: '가벼운 야식', food: '닭가슴살 스테이크' },
+                  { t: '21:00', act: 'snack',   text: '+', food: '프로틴 음료' },
+                  { t: '22:00', act: 'vit',     text: VIT_PM },
                   { t: '22:30', act: 'sleep',   text: '취침' },
                 ],
               },
@@ -541,50 +531,56 @@
           },
         },
       },
-
       {
         id: 'ON', name: '오프 나이트', sub: 'OFF · NIGHT', emoji: '🏝️🌙',
-        loc: '평누도 → 구미', desc: '오프 다음날 13:30 출발 → 나이트',
+        loc: '평누도 → 구미', desc: 'Day 1 평누도 휴식 · Day 2 오전 일찍 출발 → 구미에서 nap → 18시 출근',
         grad: ['#10b981', '#6366f1'],
         days: [
           {
             title: 'Day 1 · 오프', loc: '평누도',
-            meta: { sleep: { from: '23:00', to: '09:00', hrs: 10, note: '나이트 대비 sleep banking' }, caffeine: { cutoff: '15:00' }, woKey: 'full', workoutTime: '10:30' },
+            meta: { sleep: { from: '23:00', to: '08:30', hrs: 9.5, note: '평소 오프처럼 + 살짝 늦게 자기 (다음날 늦잠 + nap 보장)' }, caffeine: { cutoff: '14:30' }, woKey: 'full', workoutTime: '10:30' },
             items: [
               { t: '07:00', act: 'wake',    text: '기상' },
-              { t: '07:30', act: 'meal',    text: '아침', food: '점보400' },
-              { t: '07:40', act: 'vit',     text: '비타민 D3 + 오메가3 + 종합' },
-              { t: '10:30', act: 'workout', text: '헬스 · Full body' },
-              { t: '12:00', act: 'meal',    text: '점심', food: '닭가슴살 볶음밥' },
-              { t: '15:00', act: 'coffee',  text: '마지막 커피' },
-              { t: '15:30', act: 'snack',   text: '오후 간식', food: '닭가슴살 스테이크 ×2' },
-              { t: '15:30', act: 'snack',   text: '+ 요거트', food: '그릭요거트' },
-              { t: '18:30', act: 'meal',    text: '저녁', food: '닭가슴살 스테이크 ×2' },
-              { t: '22:30', act: 'vit',     text: '마그네슘' },
-              { t: '23:00', act: 'sleep',   text: '취침' },
+              { t: '07:30', act: 'meal',    text: '아침', food: '닭가슴살 볶음밥' },
+              { t: '07:40', act: 'vit',     text: VIT_AM },
+              { t: '08:00', act: 'coffee',  text: '커피' },
+              { t: '10:30', act: 'workout', text: '헬스 · Full body (90min)' },
+              { t: '13:00', act: 'meal',    text: '점심', food: '닭가슴살 스테이크' },
+              { t: '13:00', act: 'snack',   text: '+', food: '그릭요거트' },
+              { t: '13:00', act: 'snack',   text: '+', food: '고구마' },
+              { t: '14:30', act: 'coffee',  text: '마지막 커피' },
+              { t: '18:30', act: 'meal',    text: '저녁', food: '닭가슴살 볶음밥' },
+              { t: '21:00', act: 'meal',    text: '가벼운 야식', food: '닭가슴살 스테이크' },
+              { t: '21:00', act: 'snack',   text: '+', food: '프로틴 음료' },
+              { t: '22:45', act: 'vit',     text: VIT_PM },
+              { t: '23:00', act: 'sleep',   text: '취침 (살짝 늦게)', note: '다음날 8:30 기상 = 9.5h' },
             ],
           },
           {
             title: 'Day 2 · 나이트', loc: '평누도 → 구미',
-            meta: { sleep: { from: '23:00 (전날)', to: '09:00', hrs: 10, note: '+ 휴게소 power nap' }, caffeine: { cutoff: '03:00' }, woKey: 'rest', workoutTime: null,
-              drive: { from: '13:30', to: '17:30', dur: 4, risk: '안전', tip: '14:30 휴게소 nap 권장' } },
+            meta: { sleep: { from: '15:00', to: '16:30', hrs: 1.5, note: 'Power nap 90min (정확히 1 sleep cycle · sleep inertia 최소) · 전날 9.5h 푹잠 + nap 조합' }, caffeine: { cutoff: '없음 (당일 X)', note: '오후 nap 보장 위해 도착 전까지 카페인 X · 18:30 근무 시작 후 자유' }, woKey: 'rest', workoutTime: null,
+              drive: { from: '10:30', to: '14:30', dur: 4, risk: '안전', tip: '한낮 운전 · 푹 잔 후 컨디션 OK · 휴게소 1회 권장' } },
             items: [
-              { t: '09:00', act: 'wake',    text: '기상 (충분히 잠)' },
-              { t: '09:30', act: 'meal',    text: '아침', food: '점보400' },
-              { t: '09:40', act: 'vit',     text: '비타민 D3 + 오메가3 + B복합' },
-              { t: '10:30', act: 'rest',    text: '가벼운 스트레칭' },
-              { t: '12:30', act: 'meal',    text: '점심 (든든히) + 도시락', food: '닭가슴살 볶음밥' },
-              { t: '13:15', act: 'coffee',  text: '운전 전 커피' },
-              { t: '13:30', act: 'travel',  text: '구미로 출발 (4h)' },
-              { t: '14:30', act: 'nap',     text: '휴게소 power nap 20분', note: '근무 대비 sleep banking' },
-              { t: '17:30', act: 'travel',  text: '구미 도착' },
-              { t: '17:45', act: 'meal',    text: '간단 식사', food: '닭가슴살 스테이크' },
+              { t: '08:30', act: 'wake',    text: '기상 (9.5h 푹잠 후)' },
+              { t: '09:00', act: 'meal',    text: '아침 (든든히)', food: '닭가슴살 볶음밥' },
+              { t: '09:10', act: 'vit',     text: VIT_AM },
+              { t: '10:00', act: 'rest',    text: '짐 챙김 + 도시락 준비' },
+              { t: '10:30', act: 'travel',  text: '구미로 출발 (4h)', note: '☕ 카페인 X · nap 보장' },
+              { t: '12:30', act: 'rest',    text: '휴게소 정차 (10분 · 스트레칭/물)' },
+              { t: '14:30', act: 'travel',  text: '구미 숙소 도착' },
+              { t: '14:45', act: 'meal',    text: 'nap 전 가벼운 식사', food: '닭가슴살 스테이크' },
+              { t: '15:00', act: 'sleep',   text: 'Power nap 시작', note: '⏰ 16:30 알람 · 90min = 1 cycle' },
+              { t: '16:30', act: 'wake',    text: '기상 + 샤워 + 정신차리기' },
+              { t: '17:00', act: 'meal',    text: '식사 + 도시락 챙김', food: '닭가슴살 볶음밥' },
+              { t: '17:45', act: 'travel',  text: '출근 (걸어서)' },
               { t: '18:00', act: 'workN',   text: '나이트 시작' },
-              { t: '18:30', act: 'coffee',  text: '커피' },
-              { t: '22:00', act: 'meal',    text: '야식', food: '닭가슴살 스테이크 ×2' },
+              { t: '18:30', act: 'coffee',  text: '근무 초반 커피' },
+              { t: '22:00', act: 'meal',    text: '야식 (직장)', food: '닭가슴살 스테이크' },
+              { t: '22:00', act: 'snack',   text: '+ 편의점', food: '단백질바' },
               { t: '01:30', act: 'coffee',  text: '마지막 커피' },
-              { t: '02:00', act: 'snack',   text: '단백질바', food: '단백질바' },
-              { t: '05:30', act: 'snack',   text: '새벽 간식', food: '삶은계란 2개' },
+              { t: '02:00', act: 'meal',    text: '새벽 식사 (직장)', food: '점보400' },
+              { t: '05:30', act: 'snack',   text: '새벽 간식', food: '바나나' },
+              { t: '05:30', act: 'snack',   text: '+', food: '두유 무가당' },
               { t: '09:00', act: 'workN',   text: '퇴근' },
             ],
           },
@@ -592,7 +588,6 @@
       },
     ];
 
-    // ─────────────── 유틸 ───────────────
     const timeDiff = (a, b) => {
       const p = s => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };
       let d = p(b) - p(a);
@@ -618,7 +613,95 @@
       return { kcal, p, workMin, exMin, travelMin };
     }
 
-    // ─────────────── 컴포넌트 ───────────────
+    async function hardRefresh() {
+      try {
+        if (navigator.serviceWorker?.controller) {
+          navigator.serviceWorker.controller.postMessage('clearCache');
+        }
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((k) => caches.delete(k)));
+        }
+      } catch {}
+      setTimeout(() => window.location.reload(), 350);
+    }
+
+    function PullToRefresh({ enabled, children }) {
+      const [pull, setPull] = useState(0);
+      const [refreshing, setRefreshing] = useState(false);
+      const startY = useRef(null);
+      const THRESHOLD = 70;
+
+      useEffect(() => {
+        if (!enabled || refreshing) return;
+        const onStart = (e) => {
+          if (window.scrollY > 0) { startY.current = null; return; }
+          startY.current = e.touches[0].clientY;
+        };
+        const onMove = (e) => {
+          if (startY.current === null) return;
+          if (window.scrollY > 0) { startY.current = null; setPull(0); return; }
+          const dy = e.touches[0].clientY - startY.current;
+          if (dy > 0) setPull(Math.min(Math.pow(dy, 0.85), 130));
+          else setPull(0);
+        };
+        const onEnd = () => {
+          if (startY.current === null) return;
+          startY.current = null;
+          setPull((cur) => {
+            if (cur > THRESHOLD) {
+              setRefreshing(true);
+              hardRefresh();
+              return 60;
+            }
+            return 0;
+          });
+        };
+        document.addEventListener('touchstart', onStart, { passive: true });
+        document.addEventListener('touchmove', onMove, { passive: true });
+        document.addEventListener('touchend', onEnd, { passive: true });
+        document.addEventListener('touchcancel', onEnd, { passive: true });
+        return () => {
+          document.removeEventListener('touchstart', onStart);
+          document.removeEventListener('touchmove', onMove);
+          document.removeEventListener('touchend', onEnd);
+          document.removeEventListener('touchcancel', onEnd);
+        };
+      }, [enabled, refreshing]);
+
+      const reached = pull > THRESHOLD;
+      const indicatorY = Math.min(pull, 80);
+      const opacity = Math.min(pull / 30, 1);
+
+      return (
+        <>
+          <div className="fixed left-0 right-0 flex items-start justify-center pointer-events-none z-[60]"
+            style={{
+              top: 'env(safe-area-inset-top, 0px)',
+              transform: `translateY(${indicatorY - 80}px)`,
+              opacity,
+              transition: refreshing || pull === 0 ? 'transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s' : 'none',
+            }}>
+            <div className="mt-3 flex items-center gap-2 bg-zinc-900/95 backdrop-blur border border-zinc-700 px-3.5 py-2 rounded-full shadow-lg">
+              <div className={`text-amber-400 text-base ${refreshing ? 'spin' : ''}`}
+                style={{
+                  transform: refreshing ? undefined : `rotate(${reached ? 180 : (pull / THRESHOLD) * 180}deg)`,
+                  transition: refreshing ? undefined : 'transform 0.15s ease',
+                  display: 'inline-block',
+                }}>↓</div>
+              <div className="text-zinc-200 text-[11px] font-semibold tracking-wide">
+                {refreshing ? '새로고침 중...' : reached ? '놓으면 새로고침' : '당겨서 새로고침'}
+              </div>
+            </div>
+          </div>
+          <div style={{
+            transform: `translateY(${pull}px)`,
+            transition: pull === 0 || refreshing ? 'transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)' : 'none',
+          }}>{children}</div>
+        </>
+      );
+    }
+
     function ProgressRing({ pct, color, label, value }) {
       const r = 42, c = 2 * Math.PI * r;
       const off = c - (Math.min(pct, 100) / 100) * c;
@@ -714,7 +797,7 @@
       const day = days[dayIdx];
       const stats = calcStats(day);
       const meta = day.meta;
-      const wo = WO[settings.workoutLevel][meta.woKey];
+      const wo = WO[settings.workoutLevel]?.[meta.woKey] || WO.standard[meta.woKey];
 
       useEffect(() => { window.scrollTo(0, 0); }, [dayIdx, odPlan]);
 
@@ -760,7 +843,6 @@
             </div>
           </div>
 
-          {/* 매크로 박스: 프로필 입력 여부에 따라 */}
           <div className="px-5 mb-5">
             {macros ? (
               <div className="rounded-3xl p-5 bg-zinc-900/60 border border-zinc-800">
@@ -782,26 +864,20 @@
                 )}
               </div>
             ) : (
-              <button onClick={onEditProfile}
-                className="w-full rounded-3xl p-5 bg-zinc-900/60 border border-zinc-800 border-dashed text-center active:scale-[0.99] transition">
-                <div className="text-zinc-300 text-sm font-semibold mb-1">📊 칼로리 / 단백질 진행률 보기</div>
-                <div className="text-zinc-500 text-[12px] mb-3 leading-snug">
-                  프로필 입력하면 목표 대비 자동 계산돼요
+              <>
+                <button onClick={onEditProfile}
+                  className="w-full rounded-3xl p-5 bg-zinc-900/60 border border-zinc-800 border-dashed text-center active:scale-[0.99] transition">
+                  <div className="text-zinc-300 text-sm font-semibold mb-1">📊 칼로리 / 단백질 진행률 보기</div>
+                  <div className="text-zinc-500 text-[12px] mb-3 leading-snug">프로필 입력하면 자동 계산돼요</div>
+                  <div className="inline-block px-4 py-2 rounded-xl bg-amber-500 text-zinc-950 text-[12px] font-bold">프로필 입력하기 →</div>
+                </button>
+                <div className="mt-3 rounded-2xl p-3 bg-zinc-900/40 border border-zinc-800/60 text-center">
+                  <span className="text-[11px] text-zinc-500">오늘 식단 합계 · </span>
+                  <span className="text-amber-400 font-mono text-[12px] font-semibold">{stats.kcal}kcal</span>
+                  <span className="text-zinc-600 mx-1">·</span>
+                  <span className="text-emerald-400 font-mono text-[12px] font-semibold">P {stats.p}g</span>
                 </div>
-                <div className="inline-block px-4 py-2 rounded-xl bg-amber-500 text-zinc-950 text-[12px] font-bold">
-                  프로필 입력하기 →
-                </div>
-              </button>
-            )}
-
-            {/* 식단 합계는 프로필 무관하게 항상 표시 */}
-            {!macros && (
-              <div className="mt-3 rounded-2xl p-3 bg-zinc-900/40 border border-zinc-800/60 text-center">
-                <span className="text-[11px] text-zinc-500">오늘 식단 합계 · </span>
-                <span className="text-amber-400 font-mono text-[12px] font-semibold">{stats.kcal}kcal</span>
-                <span className="text-zinc-600 mx-1">·</span>
-                <span className="text-emerald-400 font-mono text-[12px] font-semibold">P {stats.p}g</span>
-              </div>
+              </>
             )}
           </div>
 
@@ -813,7 +889,7 @@
               value={meta.caffeine.cutoff}
               sub={meta.caffeine.note || '반감기 ~5h · 취침 8h 전 마지막 잔'} />
             {wo.dur > 0 ? (
-              <MetaCard icon="💪" color="#22c55e" label={`운동 · ${settings.workoutLevel === 'light' ? 'Light' : 'Normal'}`}
+              <MetaCard icon="💪" color="#22c55e" label={`운동 · ${settings.workoutLevel === 'standard' ? 'Standard' : 'Quick'}`}
                 value={`${wo.name} · ${wo.dur}min${meta.workoutTime ? ` · ${meta.workoutTime}` : ''}`}
                 sub={wo.desc} />
             ) : (
@@ -855,18 +931,10 @@
     function NumberField({ value, onChange, unit, min, max, placeholder }) {
       return (
         <div className="flex items-baseline gap-1">
-          <input
-            type="number"
-            inputMode="numeric"
-            min={min} max={max}
-            value={value ?? ''}
-            placeholder={placeholder}
-            onChange={e => {
-              const v = e.target.value;
-              onChange(v === '' ? null : Number(v));
-            }}
-            className="w-full bg-transparent text-zinc-100 font-mono font-bold text-xl focus:outline-none placeholder:text-zinc-700"
-          />
+          <input type="number" inputMode="numeric" min={min} max={max}
+            value={value ?? ''} placeholder={placeholder}
+            onChange={e => { const v = e.target.value; onChange(v === '' ? null : Number(v)); }}
+            className="w-full bg-transparent text-zinc-100 font-mono font-bold text-xl focus:outline-none placeholder:text-zinc-700" />
           <span className="text-xs text-zinc-500 font-mono">{unit}</span>
         </div>
       );
@@ -890,7 +958,6 @@
             </div>
 
             <div className="p-5 space-y-5">
-              {/* 성별 */}
               <div>
                 <div className="text-[10px] tracking-widest text-zinc-500 uppercase mb-2">성별</div>
                 <div className="flex gap-2">
@@ -911,7 +978,6 @@
                 </div>
               </div>
 
-              {/* 기본 정보 */}
               <div>
                 <div className="text-[10px] tracking-widest text-zinc-500 uppercase mb-2">기본 정보</div>
                 <div className="grid grid-cols-2 gap-2">
@@ -923,23 +989,16 @@
                   ].map(f => (
                     <label key={f.k} className="rounded-2xl bg-zinc-900 border border-zinc-800 p-3 block">
                       <div className="text-[10px] text-zinc-500 tracking-wide uppercase mb-1">{f.label}</div>
-                      <NumberField
-                        value={p[f.k]}
-                        onChange={(v) => setP({ ...p, [f.k]: v })}
-                        unit={f.unit}
-                        min={f.min}
-                        max={f.max}
-                        placeholder={f.ph}
-                      />
+                      <NumberField value={p[f.k]} onChange={(v) => setP({ ...p, [f.k]: v })}
+                        unit={f.unit} min={f.min} max={f.max} placeholder={f.ph} />
                     </label>
                   ))}
                 </div>
                 <div className="text-[10.5px] text-zinc-600 mt-2 leading-relaxed">
-                  모든 정보는 이 폰에만 저장돼요 (외부 전송 X · 클라우드 X)
+                  모든 정보는 이 폰에만 저장돼요 (외부 전송 X)
                 </div>
               </div>
 
-              {/* 자동 계산 결과 */}
               <div>
                 <div className="text-[10px] tracking-widest text-zinc-500 uppercase mb-2">
                   자동 계산 {complete ? '' : '· 모든 정보 입력 후 표시'}
@@ -977,34 +1036,32 @@
                 )}
               </div>
 
-              {/* 운동 강도 */}
               <div>
                 <div className="text-[10px] tracking-widest text-zinc-500 uppercase mb-2">운동 강도</div>
                 <div className="flex gap-2">
                   {[
-                    { v: 'light',  label: 'Light', desc: '45min' },
-                    { v: 'normal', label: 'Normal', desc: '75min' },
+                    { v: 'standard', label: 'Standard', desc: '90min · 근력 60 + 유산소 20' },
+                    { v: 'quick',    label: 'Quick',    desc: '55min · 시간 부족할 때' },
                   ].map(o => (
                     <button key={o.v} onClick={() => setS({ ...s, workoutLevel: o.v })}
-                      className={`flex-1 p-3 rounded-2xl border transition ${
+                      className={`flex-1 p-3 rounded-2xl border transition text-left ${
                         s.workoutLevel === o.v
                           ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-300'
                           : 'bg-zinc-900 border-zinc-800 text-zinc-400'
                       }`}>
                       <div className="font-bold text-sm">{o.label}</div>
-                      <div className="text-[11px] opacity-80 font-mono">{o.desc}</div>
+                      <div className="text-[10.5px] opacity-80 font-mono mt-0.5">{o.desc}</div>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* OD 운전 방식 */}
               <div>
                 <div className="text-[10px] tracking-widest text-zinc-500 uppercase mb-2">OD 패턴 기본 운전 방식</div>
                 <div className="flex gap-2">
                   {[
                     { v: 'dawn', label: '새벽 출발', desc: '5시 · 3h' },
-                    { v: 'nightBefore', label: '전날 밤', desc: '저녁 7시 · 3h 🛡️' },
+                    { v: 'nightBefore', label: '전날 밤', desc: '저녁 7시 🛡️' },
                   ].map(o => (
                     <button key={o.v} onClick={() => setS({ ...s, odPlan: o.v })}
                       className={`flex-1 p-3 rounded-2xl border transition ${
@@ -1032,7 +1089,10 @@
     function VitaminSection() {
       return (
         <div className="mt-8 rounded-2xl p-4 border border-pink-500/30 bg-pink-500/5">
-          <div className="font-display text-[10px] tracking-[0.3em] text-pink-400 mb-3">SUPPLEMENTS · 비타민 / 보충제</div>
+          <div className="font-display text-[10px] tracking-[0.3em] text-pink-400 mb-1">SUPPLEMENTS · 영양제</div>
+          <div className="text-[11px] text-zinc-400 mb-3 leading-snug">
+            아침 첫 식사 후 한 번 + 자기 전 한 번 · 모든 패턴 동일
+          </div>
           <div className="space-y-2.5">
             {VITAMINS.map(v => (
               <div key={v.name} className="rounded-xl p-3 bg-zinc-900/60 border border-zinc-800">
@@ -1047,7 +1107,7 @@
             ))}
           </div>
           <div className="mt-3 text-[10.5px] text-zinc-500 leading-relaxed italic">
-            ※ 응급의학과 의사이시니 본인 판단으로 멜라토닌 0.3-3mg (취침 30분 전) 단기 사용도 옵션. 다만 의존 가능성 고려.
+            ※ 응급의학과 의사이시니 멜라토닌 0.3-3mg (취침 30분 전) 단기 사용도 옵션. 본인 판단.
           </div>
         </div>
       );
@@ -1066,8 +1126,7 @@
             <button onClick={onEditProfile}
               className={`w-11 h-11 rounded-full border flex items-center justify-center active:scale-95 transition mt-1 relative ${
                 complete ? 'bg-zinc-900 border-zinc-800' : 'bg-amber-500/15 border-amber-500/40'
-              }`}
-              aria-label="설정">
+              }`}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                 stroke={complete ? '#a1a1aa' : '#fbbf24'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="3" />
@@ -1079,7 +1138,6 @@
             </button>
           </div>
 
-          {/* 프로필 미입력 시에만 안내 카드 */}
           {!complete && (
             <div className="px-5 mb-3">
               <button onClick={onEditProfile}
@@ -1107,19 +1165,40 @@
           <div className="px-5 pb-12">
             <div className="font-display text-[11px] tracking-[0.25em] text-zinc-400 mb-3">MAIN FOODS · KCAL / PROTEIN</div>
             <div className="space-y-2">
-              {['점보400', '닭가슴살 볶음밥', '닭가슴살 스테이크'].map(name => (
-                <div key={name} className="flex items-center justify-between p-3 rounded-2xl bg-zinc-900/60 border border-zinc-800">
-                  <div className="text-zinc-200 text-sm font-medium">{name}</div>
-                  <div className="flex gap-3 font-mono text-xs">
-                    <span className="text-amber-400">{FOOD[name].kcal}kcal</span>
-                    <span className="text-emerald-400">P {FOOD[name].p}g</span>
-                  </div>
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-zinc-900/60 border border-zinc-800">
+                <div>
+                  <div className="text-zinc-200 text-sm font-medium">점보400</div>
+                  <div className="text-[10px] text-zinc-500">직장에서만 (출근 도시락)</div>
                 </div>
-              ))}
+                <div className="flex gap-3 font-mono text-xs">
+                  <span className="text-amber-400">650kcal</span>
+                  <span className="text-emerald-400">P 25g</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-zinc-900/60 border border-zinc-800">
+                <div>
+                  <div className="text-zinc-200 text-sm font-medium">닭가슴살 볶음밥</div>
+                  <div className="text-[10px] text-zinc-500">집에서</div>
+                </div>
+                <div className="flex gap-3 font-mono text-xs">
+                  <span className="text-amber-400">600kcal</span>
+                  <span className="text-emerald-400">P 40g</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-zinc-900/60 border border-zinc-800">
+                <div>
+                  <div className="text-zinc-200 text-sm font-medium">닭가슴살 스테이크 (1개)</div>
+                  <div className="text-[10px] text-zinc-500">집/직장 · 한 번에 1개만</div>
+                </div>
+                <div className="flex gap-3 font-mono text-xs">
+                  <span className="text-amber-400">160kcal</span>
+                  <span className="text-emerald-400">P 15g</span>
+                </div>
+              </div>
             </div>
-            <div className="font-display text-[11px] tracking-[0.25em] text-zinc-400 mt-6 mb-3">편의점 보조</div>
+            <div className="font-display text-[11px] tracking-[0.25em] text-zinc-400 mt-6 mb-3">편의점 · 나이트 야식/간식용</div>
             <div className="text-[11px] text-zinc-400 leading-relaxed">
-              삶은계란 (150/13) · 그릭요거트 (120/15) · 닭가슴살 소시지 2개 (160/26) · 프로틴 음료 (150/25) · 단백질바 (200/18) · 바나나 (90/1) · 두유 (100/9) · 견과류 (150/5)
+              단백질바 (200/18) · 그릭요거트 (120/15) · 프로틴 음료 (150/25) · 닭가슴살 소시지 2개 (160/26) · 삶은계란 (150/13) · 바나나 (90/1) · 두유 (100/9) · 견과류 (150/5) · 고구마 (130/2)
             </div>
 
             <VitaminSection />
@@ -1129,122 +1208,13 @@
               <ul className="text-[12px] text-zinc-300 space-y-1.5 leading-relaxed">
                 <li>· 카페인 t½ ≈ 5h → 취침 8h 전 컷오프</li>
                 <li>· Anchor sleep: 4-5h는 같은 시간대 고정</li>
-                <li>· Power nap 20분 (REM 전) / 90분 (1 cycle)</li>
                 <li>· 나이트 퇴근 시 선글라스 → 멜라토닌 보존</li>
                 <li>· 침실 18-20℃ · 암막 · 폰 30분 전 OFF</li>
+                <li>· 위에서 아래로 당기면 새로고침</li>
               </ul>
             </div>
           </div>
         </div>
-      );
-    }
-
-    // ─────────────── Pull to Refresh ───────────────
-    async function hardRefresh() {
-      try {
-        if (navigator.serviceWorker?.controller) {
-          navigator.serviceWorker.controller.postMessage('clearCache');
-        }
-        if ('caches' in window) {
-          const keys = await caches.keys();
-          await Promise.all(keys.map((k) => caches.delete(k)));
-        }
-      } catch {}
-      // 약간 대기 → 캐시 비우기 완료 후 reload
-      setTimeout(() => window.location.reload(), 350);
-    }
-
-    function PullToRefresh({ enabled, children }) {
-      const [pull, setPull] = useState(0);
-      const [refreshing, setRefreshing] = useState(false);
-      const startY = useRef(null);
-      const THRESHOLD = 70;
-
-      useEffect(() => {
-        if (!enabled || refreshing) return;
-
-        const onStart = (e) => {
-          if (window.scrollY > 0) { startY.current = null; return; }
-          startY.current = e.touches[0].clientY;
-        };
-
-        const onMove = (e) => {
-          if (startY.current === null) return;
-          if (window.scrollY > 0) { startY.current = null; setPull(0); return; }
-          const dy = e.touches[0].clientY - startY.current;
-          if (dy > 0) {
-            const damped = Math.pow(dy, 0.85);
-            setPull(Math.min(damped, 130));
-          } else {
-            setPull(0);
-          }
-        };
-
-        const onEnd = () => {
-          if (startY.current === null) return;
-          startY.current = null;
-          setPull((cur) => {
-            if (cur > THRESHOLD) {
-              setRefreshing(true);
-              hardRefresh();
-              return 60; // 인디케이터 유지
-            }
-            return 0;
-          });
-        };
-
-        document.addEventListener('touchstart', onStart, { passive: true });
-        document.addEventListener('touchmove', onMove, { passive: true });
-        document.addEventListener('touchend', onEnd, { passive: true });
-        document.addEventListener('touchcancel', onEnd, { passive: true });
-
-        return () => {
-          document.removeEventListener('touchstart', onStart);
-          document.removeEventListener('touchmove', onMove);
-          document.removeEventListener('touchend', onEnd);
-          document.removeEventListener('touchcancel', onEnd);
-        };
-      }, [enabled, refreshing]);
-
-      const reached = pull > THRESHOLD;
-      const indicatorY = Math.min(pull, 80);
-      const opacity = Math.min(pull / 30, 1);
-
-      return (
-        <>
-          <div
-            className="fixed left-0 right-0 flex items-start justify-center pointer-events-none z-[60]"
-            style={{
-              top: 'env(safe-area-inset-top, 0px)',
-              transform: `translateY(${indicatorY - 80}px)`,
-              opacity,
-              transition: refreshing || pull === 0 ? 'transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s' : 'none',
-            }}
-          >
-            <div className="mt-3 flex items-center gap-2 bg-zinc-900/95 backdrop-blur border border-zinc-700 px-3.5 py-2 rounded-full shadow-lg">
-              <div
-                className={`text-amber-400 text-base ${refreshing ? 'spin' : ''}`}
-                style={{
-                  transform: refreshing ? undefined : `rotate(${reached ? 180 : (pull / THRESHOLD) * 180}deg)`,
-                  transition: refreshing ? undefined : 'transform 0.15s ease',
-                  display: 'inline-block',
-                }}
-              >↓</div>
-              <div className="text-zinc-200 text-[11px] font-semibold tracking-wide">
-                {refreshing ? '새로고침 중...' : reached ? '놓으면 새로고침' : '당겨서 새로고침'}
-              </div>
-            </div>
-          </div>
-
-          <div
-            style={{
-              transform: `translateY(${pull}px)`,
-              transition: pull === 0 || refreshing ? 'transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)' : 'none',
-            }}
-          >
-            {children}
-          </div>
-        </>
       );
     }
 
@@ -1268,30 +1238,17 @@
         <>
           <PullToRefresh enabled={!editing}>
             {selected ? (
-              <DetailView
-                shift={selected}
-                settings={settings}
-                macros={macros}
-                checked={checked}
-                onToggleCheck={toggleCheck}
-                onBack={() => setSelected(null)}
-                onEditProfile={openEditor}
-              />
+              <DetailView shift={selected} settings={settings} macros={macros}
+                checked={checked} onToggleCheck={toggleCheck}
+                onBack={() => setSelected(null)} onEditProfile={openEditor} />
             ) : (
-              <GridView
-                profile={profile}
-                onSelect={setSelected}
-                onEditProfile={openEditor}
-              />
+              <GridView profile={profile} onSelect={setSelected} onEditProfile={openEditor} />
             )}
           </PullToRefresh>
           {editing && (
-            <ProfileEditor
-              profile={profile}
-              settings={settings}
+            <ProfileEditor profile={profile} settings={settings}
               onSave={(p, s) => { setProfile(p); setSettings(s); setEditing(false); }}
-              onClose={() => setEditing(false)}
-            />
+              onClose={() => setEditing(false)} />
           )}
         </>
       );
