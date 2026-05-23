@@ -744,12 +744,18 @@
       );
     }
 
-    function ShiftCard({ shift, onClick }) {
+    function ShiftCard({ shift, onClick, inProgress }) {
       return (
         <button onClick={onClick}
           className="relative overflow-hidden rounded-3xl p-5 text-left transition-transform active:scale-95 w-full"
           style={{ background: `linear-gradient(135deg, ${shift.grad[0]} 0%, ${shift.grad[1]} 100%)`, minHeight: 150 }}>
           <div className="absolute -top-6 -right-6 text-6xl opacity-25 select-none">{shift.emoji}</div>
+          {inProgress && (
+            <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 px-2 py-1 rounded-full bg-black/35 backdrop-blur">
+              <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></div>
+              <div className="text-[8.5px] text-white font-bold uppercase tracking-[0.15em]">진행중</div>
+            </div>
+          )}
           <div className="relative z-10">
             <div className="font-display text-[11px] text-white/85 tracking-[0.2em] mb-1.5">{shift.sub}</div>
             <div className="text-white text-lg font-extrabold mb-1.5 leading-tight">{shift.name}</div>
@@ -1165,7 +1171,7 @@
       );
     }
 
-    function GridView({ profile, onSelect, onEditProfile }) {
+    function GridView({ profile, onSelect, onEditProfile, checkedArr = [] }) {
       const complete = isProfileComplete(profile);
       return (
         <div className="min-h-screen bg-zinc-950 safe-bottom">
@@ -1207,11 +1213,14 @@
           )}
 
           <div className="px-5 grid grid-cols-2 gap-3 pb-10 pt-2">
-            {SHIFTS.map((s, i) => (
-              <div key={s.id} className="slide-up" style={{ animationDelay: `${i * 40}ms` }}>
-                <ShiftCard shift={s} onClick={() => onSelect(s)} />
-              </div>
-            ))}
+            {SHIFTS.map((s, i) => {
+              const inProgress = checkedArr.some(k => k.startsWith(`${s.id}-`));
+              return (
+                <div key={s.id} className="slide-up" style={{ animationDelay: `${i * 40}ms` }}>
+                  <ShiftCard shift={s} onClick={() => onSelect(s)} inProgress={inProgress} />
+                </div>
+              );
+            })}
           </div>
 
           <div className="px-5 pb-12">
@@ -1349,7 +1358,7 @@
                 onClearChecks={() => clearShiftChecks(selected.id)}
                 onBack={goBack} onEditProfile={openEditor} />
             ) : (
-              <GridView profile={profile} onSelect={setSelected} onEditProfile={openEditor} />
+              <GridView profile={profile} onSelect={setSelected} onEditProfile={openEditor} checkedArr={checkedArr} />
             )}
           </PullToRefresh>
           {editing && (
